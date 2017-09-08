@@ -1,16 +1,23 @@
 class Block {
     type: BlockType;
-    pos: Vec2;
+    pos: Phaser.Point;
     rot: number;
     shape: number[][];
+    group: Phaser.Group;
 
-    constructor(type: BlockType, pos: Vec2) {
+    constructor(type: BlockType, pos: Phaser.Point, game: Phaser.Game) {
         this.type = type;
         this.pos = pos;
         this.shape = BlockType.getShape(type);
+
+        // TODO: Group
     }
 
-    move(pos: Vec2) {
+    update() {
+        this.pos.x -= 1;
+    }
+
+    move(pos: Phaser.Point) {
         
     }
 
