@@ -11,16 +11,15 @@ class Block {
         
         let color: string = BlockType.getColor(type);
         this.group = game.add.group();
-        for (let y: number = 0; y < 4; y++) {
-            for (let x: number = 0; x < 4; x++) {
-                if (this.shape[y][x] == 1) this.group.create(x * blockSize, y * blockSize, color);
-            }
-        }
 
+        for(let i:number = 0; i < 4; i++) {
+            this.group.create(0, 0, color);
+        }
+        
         this.group.setAll("width", blockSize);
         this.group.setAll("height", blockSize);
-
-        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
+        
+        this.updateShape();
     }
 
     isAlive():boolean {
@@ -30,8 +29,22 @@ class Block {
     update() {
         if (this.isAlive()) {
             this.move(0, -1);
-            this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
+            this.updateShape();
         }
+    }
+
+    updateShape() {
+        let i: number = 0;
+        for (let y: number = 0; y < 4; y++) {
+            for (let x: number = 0; x < 4; x++) {
+                if (this.shape[y][x] == 1) {
+                    this.group.getChildAt(i).position.set(x * blockSize, y * blockSize);
+                    i++;
+                }
+            }
+        }
+
+        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
     }
 
     move(x:number, y:number) {
@@ -41,15 +54,9 @@ class Block {
 
     rotate() {
         if (this.type == BlockType.O) return; // Nothing to do here
-        
-        
 
-        let i:number = 0;
-        for (let y:number = 0; y < 4; y++) {
-            for (let x:number = 0; x < 4; x++) {
-                if (this.shape[y][x] == 1) this.group.getChildAt(i).position.set(x * blockSize, -y * blockSize);
-            }
-        }
+        
+        this.updateShape();
     }
 
     getDimensions():Phaser.Point {

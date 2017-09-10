@@ -1,10 +1,18 @@
 class Test {
-    static runTests() {
-        Test.runWidthTests();
-        Test.runHeightTests();
+    static runTests():boolean {
+        let numErrors:number = 0;
+        numErrors += Test.runWidthTests();
+        numErrors += Test.runHeightTests();
+
+        if (numErrors > 0) {
+            console.error("Errors Occured, Killing Game");
+            return false;
+        }
+
+        return true;
     }
 
-    static runWidthTests() {
+    private static runWidthTests():number {
         let numErrors:number = 0;
 
         let iDim: Phaser.Point = Block.getDimensions(BlockType.I);
@@ -25,12 +33,12 @@ class Test {
 
         if (numErrors > 0) {
             console.error("Width Tests: " + numErrors + " errors");
-        } else {
-            console.log("Width Tests: Passed");
         }
+
+        return numErrors;
     }
 
-    static runHeightTests() {
+    private static runHeightTests():number {
         let numErrors: number = 0;
 
         let iDim: Phaser.Point = Block.getDimensions(BlockType.I);
@@ -51,12 +59,12 @@ class Test {
 
         if (numErrors > 0) {
             console.error("Height Tests: " + numErrors + " errors");
-        } else {
-            console.log("Height Tests: Passed");
         }
+
+        return numErrors;
     }
 
-    static assert(condition:boolean, error:string):number {
+    private static assert(condition:boolean, error:string):number {
         if (!condition) console.error(error);
 
         // Return number of errors

@@ -1,11 +1,12 @@
 const gridWidth:number = 10;
 const gridHeight:number = 22;
 const blockSize:number = 32;
-const timestep:number = 1;
+const timestep:number = 50;
 
 class SimpleGame {
 	game:Phaser.Game;
 	nextUpdate:number;
+	testsFailed:boolean;
 
 	grid:Grid;
 	currentBlock:Block;
@@ -20,14 +21,17 @@ class SimpleGame {
 	}
 	
 	create() {
+		this.testsFailed = !Test.runTests();
+		if (this.testsFailed) return;
+
 		this.nextUpdate = 0;
 		this.grid = new Grid(gridWidth, gridHeight, this.game);
 		this.deadBlocks = [];
-
-		Test.runTests();
 	}
 
 	update() {
+		if (this.testsFailed) return;
+
 		this.nextUpdate -= this.game.time.elapsedMS;
 		if (this.nextUpdate <= 0) {
 			if (this.currentBlock && this.currentBlock.isAlive()) {

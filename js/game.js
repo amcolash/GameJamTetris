@@ -5,15 +5,12 @@ var Block = /** @class */ (function () {
         this.shape = BlockType.getShape(type);
         var color = BlockType.getColor(type);
         this.group = game.add.group();
-        for (var y = 0; y < 4; y++) {
-            for (var x = 0; x < 4; x++) {
-                if (this.shape[y][x] == 1)
-                    this.group.create(x * blockSize, y * blockSize, color);
-            }
+        for (var i = 0; i < 4; i++) {
+            this.group.create(0, 0, color);
         }
         this.group.setAll("width", blockSize);
         this.group.setAll("height", blockSize);
-        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
+        this.updateShape();
     }
     Block.prototype.isAlive = function () {
         return this.gridPos.y > 4;
@@ -21,8 +18,20 @@ var Block = /** @class */ (function () {
     Block.prototype.update = function () {
         if (this.isAlive()) {
             this.move(0, -1);
-            this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
+            this.updateShape();
         }
+    };
+    Block.prototype.updateShape = function () {
+        var i = 0;
+        for (var y = 0; y < 4; y++) {
+            for (var x = 0; x < 4; x++) {
+                if (this.shape[y][x] == 1) {
+                    this.group.getChildAt(i).position.set(x * blockSize, y * blockSize);
+                    i++;
+                }
+            }
+        }
+        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
     };
     Block.prototype.move = function (x, y) {
         this.gridPos.x += x;
@@ -31,13 +40,7 @@ var Block = /** @class */ (function () {
     Block.prototype.rotate = function () {
         if (this.type == BlockType.O)
             return; // Nothing to do here
-        var i = 0;
-        for (var y = 0; y < 4; y++) {
-            for (var x = 0; x < 4; x++) {
-                if (this.shape[y][x] == 1)
-                    this.group.getChildAt(i).position.set(x * blockSize, -y * blockSize);
-            }
-        }
+        this.updateShape();
     };
     Block.prototype.getDimensions = function () {
         return Block.getDimensions(this.type);
@@ -167,7 +170,7 @@ var L_SHAPE = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 1, 0], [1, 1, 1, 0]];
 var gridWidth = 10;
 var gridHeight = 22;
 var blockSize = 32;
-var timestep = 1;
+var timestep = 50;
 var SimpleGame = /** @class */ (function () {
     function SimpleGame() {
         this.game = new Phaser.Game(500, 750, Phaser.AUTO, 'content', { preload: this.preload, create: this.create, update: this.update });
@@ -176,12 +179,16 @@ var SimpleGame = /** @class */ (function () {
         Block.preload(this.game);
     };
     SimpleGame.prototype.create = function () {
+        this.testsFailed = !Test.runTests();
+        if (this.testsFailed)
+            return;
         this.nextUpdate = 0;
         this.grid = new Grid(gridWidth, gridHeight, this.game);
         this.deadBlocks = [];
-        Test.runTests();
     };
     SimpleGame.prototype.update = function () {
+        if (this.testsFailed)
+            return;
         this.nextUpdate -= this.game.time.elapsedMS;
         if (this.nextUpdate <= 0) {
             if (this.currentBlock && this.currentBlock.isAlive()) {
@@ -232,8 +239,14 @@ var Test = /** @class */ (function () {
     function Test() {
     }
     Test.runTests = function () {
-        Test.runWidthTests();
-        Test.runHeightTests();
+        var numErrors = 0;
+        numErrors += Test.runWidthTests();
+        numErrors += Test.runHeightTests();
+        if (numErrors > 0) {
+            console.error("Errors Occured, Killing Game");
+            return false;
+        }
+        return true;
     };
     Test.runWidthTests = function () {
         var numErrors = 0;
@@ -254,9 +267,7 @@ var Test = /** @class */ (function () {
         if (numErrors > 0) {
             console.error("Width Tests: " + numErrors + " errors");
         }
-        else {
-            console.log("Width Tests: Passed");
-        }
+        return numErrors;
     };
     Test.runHeightTests = function () {
         var numErrors = 0;
@@ -277,9 +288,7 @@ var Test = /** @class */ (function () {
         if (numErrors > 0) {
             console.error("Height Tests: " + numErrors + " errors");
         }
-        else {
-            console.log("Height Tests: Passed");
-        }
+        return numErrors;
     };
     Test.assert = function (condition, error) {
         if (!condition)
