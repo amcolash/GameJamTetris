@@ -1,7 +1,7 @@
 const gridWidth:number = 10;
 const gridHeight:number = 22;
 const blockSize:number = 32;
-const timestep:number = 50;
+const timestep:number = 1;
 
 class SimpleGame {
 	game:Phaser.Game;
@@ -23,6 +23,8 @@ class SimpleGame {
 		this.nextUpdate = 0;
 		this.grid = new Grid(gridWidth, gridHeight, this.game);
 		this.deadBlocks = [];
+
+		Test.runTests();
 	}
 
 	update() {

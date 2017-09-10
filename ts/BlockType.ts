@@ -9,44 +9,13 @@ const Z_COLOR = BlockColor[BlockColor.GREEN];
 const J_COLOR = BlockColor[BlockColor.PINK];
 const L_COLOR = BlockColor[BlockColor.PURPLE];
 
-const I_SHAPE: number[][] = [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]];
-
-const O_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[0,1,1,0],[0,1,1,0]];
-
-const T_SHAPE: number[][] = [
-	[0,0,0,0],
-	[0,0,0,0],
-	[0,1,0,0],
-	[1,1,1,0]
-];
-
-const S_SHAPE: number[][] = [
-	[0,0,0,0],
-	[0,0,0,0],
-	[0,1,1,0],
-	[1,1,0,0]
-];
-
-const Z_SHAPE: number[][] = [
-	[0,0,0,0],
-	[0,0,0,0],
-	[1,1,0,0],
-	[0,1,1,0]
-];
-
-const J_SHAPE: number[][] = [
-	[0,0,0,0],
-	[0,1,0,0],
-	[0,1,0,0],
-	[1,1,0,0]
-];
-
-const L_SHAPE: number[][] = [
-	[0,0,0,0],
-	[1,0,0,0],
-	[1,0,0,0],
-	[1,1,0,0]
-];
+const I_SHAPE: number[][] = [[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0]];
+const O_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[1,1,0,0],[1,1,0,0]];
+const T_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[0,1,0,0],[1,1,1,0]];
+const S_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[0,1,1,0],[1,1,0,0]];
+const Z_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[1,1,0,0],[0,1,1,0]];
+const J_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[1,0,0,0],[1,1,1,0]];
+const L_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[0,0,1,0],[1,1,1,0]];
 
 namespace BlockType {
 	export function getColor(type: BlockType):string {
@@ -68,7 +37,7 @@ namespace BlockType {
 		}
 	}
 
-	export function getShape(type: BlockType):Phaser.Point[] {
+	export function getShape(type: BlockType):number[][] {
 		switch(type) {
 			case BlockType.I:
 				return I_SHAPE;

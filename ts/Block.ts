@@ -1,7 +1,7 @@
 class Block {
     type: BlockType;
     gridPos: Phaser.Point;
-    shape: boolean[][];
+    shape: number[][];
     group: Phaser.Group;
 
     constructor(type: BlockType, gridPos: Phaser.Point, game: Phaser.Game) {
@@ -11,9 +11,9 @@ class Block {
         
         let color: string = BlockType.getColor(type);
         this.group = game.add.group();
-        for(let x:number = 0; x < this.shape.length; x++) {
-            for(let y:number = 0; y < this.shape[x].length; y++) {
-                if(this.shape[x][y]) this.group.create(x * blockSize, -y * blockSize, color);
+        for (let y: number = 0; y < 4; y++) {
+            for (let x: number = 0; x < 4; x++) {
+                if (this.shape[y][x] == 1) this.group.create(x * blockSize, y * blockSize, color);
             }
         }
 
@@ -24,7 +24,7 @@ class Block {
     }
 
     isAlive():boolean {
-        return this.gridPos.y > 1;
+        return this.gridPos.y > 4;
     }
 
     update() {
@@ -45,9 +45,9 @@ class Block {
         
 
         let i:number = 0;
-        for(let x:number = 0; x < this.shape.length; x++) {
-            for(let y:number = 0; y < this.shape[x].length; y++) {
-                if(this.shape[x][y]) this.group.getChildAt(i).position.set(x * blockSize, -y * blockSize);
+        for (let y:number = 0; y < 4; y++) {
+            for (let x:number = 0; x < 4; x++) {
+                if (this.shape[y][x] == 1) this.group.getChildAt(i).position.set(x * blockSize, -y * blockSize);
             }
         }
     }
@@ -63,18 +63,29 @@ class Block {
         return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.x + 1)), gridHeight + max.y), game);
     }
 
+    // Only valid if we have at least a 1 point in a block (which we do in normal tetris)
 	static getDimensions(type: BlockType):Phaser.Point {
         let dim:Phaser.Point = new Phaser.Point();
-        let shape:boolean[][] = BlockType.getShape(type);
+        let shape:number[][] = BlockType.getShape(type);
 
-        dim.x = shape.length;
-        for(let x:number = 0; x < shape.length; x++) {
-            let height:number = 0;
-            for (let y:number = 0; y < shape[x].length; y++) {
-                if (shape[x][y]) height++;
+        let minX:number = 4;
+        let maxX:number = 0;
+        let minY:number = 4;
+        let maxY:number = 0;
+
+        for (let y:number = 0; y < 4; y++) {
+            for (let x:number = 0; x < 4; x++) {
+                if (shape[y][x] == 1) {
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+                }
             }
-            dim.y = Math.max(dim.y, height);
         }
+
+        dim.x = maxX - minX + 1;
+        dim.y = maxY - minY + 1;
 
         return dim;
 	}
