@@ -9,13 +9,44 @@ const Z_COLOR = BlockColor[BlockColor.GREEN];
 const J_COLOR = BlockColor[BlockColor.PINK];
 const L_COLOR = BlockColor[BlockColor.PURPLE];
 
-const I_SHAPE: Phaser.Point[] = [new Phaser.Point(1,0), new Phaser.Point(1,1), new Phaser.Point(1,2), new Phaser.Point(1,3)];
-const O_SHAPE: Phaser.Point[] = [new Phaser.Point(1,2), new Phaser.Point(1,3), new Phaser.Point(2,2), new Phaser.Point(2,3)];
-const T_SHAPE: Phaser.Point[] = [new Phaser.Point(1,2), new Phaser.Point(0,3), new Phaser.Point(1,3), new Phaser.Point(2,3)];
-const S_SHAPE: Phaser.Point[] = [new Phaser.Point(0,2), new Phaser.Point(1,2), new Phaser.Point(1,3), new Phaser.Point(2,3)];
-const Z_SHAPE: Phaser.Point[] = [new Phaser.Point(2,2), new Phaser.Point(1,2), new Phaser.Point(1,3), new Phaser.Point(0,3)];
-const J_SHAPE: Phaser.Point[] = [new Phaser.Point(1,1), new Phaser.Point(2,1), new Phaser.Point(2,2), new Phaser.Point(2,3)];
-const L_SHAPE: Phaser.Point[] = [new Phaser.Point(2,1), new Phaser.Point(1,1), new Phaser.Point(1,2), new Phaser.Point(1,3)];
+const I_SHAPE: number[][] = [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]];
+
+const O_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[0,1,1,0],[0,1,1,0]];
+
+const T_SHAPE: number[][] = [
+	[0,0,0,0],
+	[0,0,0,0],
+	[0,1,0,0],
+	[1,1,1,0]
+];
+
+const S_SHAPE: number[][] = [
+	[0,0,0,0],
+	[0,0,0,0],
+	[0,1,1,0],
+	[1,1,0,0]
+];
+
+const Z_SHAPE: number[][] = [
+	[0,0,0,0],
+	[0,0,0,0],
+	[1,1,0,0],
+	[0,1,1,0]
+];
+
+const J_SHAPE: number[][] = [
+	[0,0,0,0],
+	[0,1,0,0],
+	[0,1,0,0],
+	[1,1,0,0]
+];
+
+const L_SHAPE: number[][] = [
+	[0,0,0,0],
+	[1,0,0,0],
+	[1,0,0,0],
+	[1,1,0,0]
+];
 
 namespace BlockType {
 	export function getColor(type: BlockType):string {

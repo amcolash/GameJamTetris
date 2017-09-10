@@ -1,20 +1,22 @@
 class Block {
     type: BlockType;
     gridPos: Phaser.Point;
-    shape: Phaser.Point[];
+    shape: boolean[][];
     group: Phaser.Group;
 
     constructor(type: BlockType, gridPos: Phaser.Point, game: Phaser.Game) {
         this.type = type;
         this.gridPos = gridPos;
         this.shape = BlockType.getShape(type);
-
-        this.group = game.add.group();
         
         let color: string = BlockType.getColor(type);
-        for (let i:number = 0; i < 4; i++) {
-            this.group.create(this.shape[i].x * blockSize, this.shape[i].y * blockSize, color);
+        this.group = game.add.group();
+        for(let x:number = 0; x < this.shape.length; x++) {
+            for(let y:number = 0; y < this.shape[x].length; y++) {
+                if(this.shape[x][y]) this.group.create(x * blockSize, -y * blockSize, color);
+            }
         }
+
         this.group.setAll("width", blockSize);
         this.group.setAll("height", blockSize);
 
@@ -22,44 +24,58 @@ class Block {
     }
 
     isAlive():boolean {
-        return this.gridPos.y > 3;
+        return this.gridPos.y > 1;
     }
 
     update() {
-        this.gridPos.y -= 1;
-        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
-        
-        if (!this.isAlive()) {
-            this.group.destroy();
+        if (this.isAlive()) {
+            this.move(0, -1);
+            this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
         }
     }
 
-    move(pos: Phaser.Point) {
-        // TODO
+    move(x:number, y:number) {
+        this.gridPos.x += x;
+        this.gridPos.y += y;
     }
 
     rotate() {
-        this.group.rotation = (this.group.rotation + 90) % 360;
+        if (this.type == BlockType.O) return; // Nothing to do here
+        
+        
+
+        let i:number = 0;
+        for(let x:number = 0; x < this.shape.length; x++) {
+            for(let y:number = 0; y < this.shape[x].length; y++) {
+                if(this.shape[x][y]) this.group.getChildAt(i).position.set(x * blockSize, -y * blockSize);
+            }
+        }
     }
 
-    getDimensions():Phaser.Rectangle {
+    getDimensions():Phaser.Point {
         return Block.getDimensions(this.type);
     }
 
-	static getDimensions(type: BlockType):Phaser.Rectangle {
-		let shape:Phaser.Point[] = BlockType.getShape(type);
-		let dim:Phaser.Rectangle = new Phaser.Rectangle(0,0,0,0);
+    static newBlock(game:Phaser.Game):Block {
+        let type:BlockType = Math.floor(Math.random() * 7);
+        let max:Phaser.Point = Block.getDimensions(type);
 
-        // Invert y value
-        dim.y = 3;
-		for (let i:number = 0; i < 4; i++) {
-			dim.x = Math.min(dim.x, shape[i].x);
-			dim.y = Math.min(dim.y, shape[i].y);
+        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.x + 1)), gridHeight + max.y), game);
+    }
 
-			dim.width = Math.max(dim.width, shape[i].x - dim.x + 1);
-			dim.height = Math.max(dim.height, shape[i].y - dim.y + 1);
+	static getDimensions(type: BlockType):Phaser.Point {
+        let dim:Phaser.Point = new Phaser.Point();
+        let shape:boolean[][] = BlockType.getShape(type);
+
+        dim.x = shape.length;
+        for(let x:number = 0; x < shape.length; x++) {
+            let height:number = 0;
+            for (let y:number = 0; y < shape[x].length; y++) {
+                if (shape[x][y]) height++;
+            }
+            dim.y = Math.max(dim.y, height);
         }
-        
+
         return dim;
 	}
 

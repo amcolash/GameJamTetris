@@ -5,9 +5,11 @@ const timestep:number = 50;
 
 class SimpleGame {
 	game:Phaser.Game;
+	nextUpdate:number;
+
 	grid:Grid;
 	currentBlock:Block;
-	nextUpdate:number;
+	deadBlocks:Block[];
 	
 	constructor() {
 		this.game = new Phaser.Game( 500, 750, Phaser.AUTO, 'content', { preload:this.preload, create:this.create, update:this.update } );
@@ -20,6 +22,7 @@ class SimpleGame {
 	create() {
 		this.nextUpdate = 0;
 		this.grid = new Grid(gridWidth, gridHeight, this.game);
+		this.deadBlocks = [];
 	}
 
 	update() {
@@ -28,12 +31,11 @@ class SimpleGame {
 			if (this.currentBlock && this.currentBlock.isAlive()) {
 				this.currentBlock.update();
 			} else {
-				let type:BlockType = Math.floor(Math.random() * 7);
-				let max:Phaser.Rectangle = Block.getDimensions(type);
-				console.log(BlockType[type])
-				console.log(max)
+				if (this.currentBlock) {
+					this.deadBlocks.push(this.currentBlock);
+				}
 
-				this.currentBlock = new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width)), gridHeight + max.height), this.game);
+				this.currentBlock = Block.newBlock(this.game);
 			}
 
 			this.nextUpdate = timestep;

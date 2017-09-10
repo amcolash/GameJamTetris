@@ -3,44 +3,55 @@ var Block = /** @class */ (function () {
         this.type = type;
         this.gridPos = gridPos;
         this.shape = BlockType.getShape(type);
-        this.group = game.add.group();
         var color = BlockType.getColor(type);
-        for (var i = 0; i < 4; i++) {
-            this.group.create(this.shape[i].x * blockSize, this.shape[i].y * blockSize, color);
+        this.group = game.add.group();
+        for (var x = 0; x < this.shape.length; x++) {
+            for (var y = 0; y < this.shape[x].length; y++) {
+                if (this.shape[x][y])
+                    this.group.create(x * blockSize, -y * blockSize, color);
+            }
         }
         this.group.setAll("width", blockSize);
         this.group.setAll("height", blockSize);
         this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
     }
     Block.prototype.isAlive = function () {
-        return this.gridPos.y > 3;
+        return this.gridPos.y > 1;
     };
     Block.prototype.update = function () {
-        this.gridPos.y -= 1;
-        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
-        if (!this.isAlive()) {
-            this.group.destroy();
+        if (this.isAlive()) {
+            this.move(0, -1);
+            this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
         }
     };
-    Block.prototype.move = function (pos) {
-        // TODO
+    Block.prototype.move = function (x, y) {
+        this.gridPos.x += x;
+        this.gridPos.y += y;
     };
     Block.prototype.rotate = function () {
-        this.group.rotation = (this.group.rotation + 90) % 360;
+        if (this.type == BlockType.O)
+            return; // Nothing to do here
+        this.group.rotation = (this.group.rotation + Math.PI / 2) % (Math.PI * 2);
     };
     Block.prototype.getDimensions = function () {
         return Block.getDimensions(this.type);
     };
+    Block.newBlock = function (game) {
+        var type = Math.floor(Math.random() * 7);
+        var max = Block.getDimensions(type);
+        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.x + 1)), gridHeight + max.y), game);
+    };
     Block.getDimensions = function (type) {
+        var dim = new Phaser.Point();
         var shape = BlockType.getShape(type);
-        var dim = new Phaser.Rectangle(0, 0, 0, 0);
-        // Invert y value
-        dim.y = 3;
-        for (var i = 0; i < 4; i++) {
-            dim.x = Math.min(dim.x, shape[i].x);
-            dim.y = Math.min(dim.y, shape[i].y);
-            dim.width = Math.max(dim.width, shape[i].x - dim.x + 1);
-            dim.height = Math.max(dim.height, shape[i].y - dim.y + 1);
+        dim.x = shape.length;
+        for (var x = 0; x < shape.length; x++) {
+            var height = 0;
+            for (var y = 0; y < shape[x].length; y++) {
+                if (shape[x][y])
+                    height++;
+            }
+            dim.y = Math.max(dim.y, height);
         }
         return dim;
     };
@@ -92,13 +103,13 @@ var S_COLOR = BlockColor[BlockColor.ORANGE];
 var Z_COLOR = BlockColor[BlockColor.GREEN];
 var J_COLOR = BlockColor[BlockColor.PINK];
 var L_COLOR = BlockColor[BlockColor.PURPLE];
-var I_SHAPE = [new Phaser.Point(1, 0), new Phaser.Point(1, 1), new Phaser.Point(1, 2), new Phaser.Point(1, 3)];
-var O_SHAPE = [new Phaser.Point(1, 2), new Phaser.Point(1, 3), new Phaser.Point(2, 2), new Phaser.Point(2, 3)];
-var T_SHAPE = [new Phaser.Point(1, 2), new Phaser.Point(0, 3), new Phaser.Point(1, 3), new Phaser.Point(2, 3)];
-var S_SHAPE = [new Phaser.Point(0, 2), new Phaser.Point(1, 2), new Phaser.Point(1, 3), new Phaser.Point(2, 3)];
-var Z_SHAPE = [new Phaser.Point(2, 2), new Phaser.Point(1, 2), new Phaser.Point(1, 3), new Phaser.Point(0, 3)];
-var J_SHAPE = [new Phaser.Point(1, 1), new Phaser.Point(2, 1), new Phaser.Point(2, 2), new Phaser.Point(2, 3)];
-var L_SHAPE = [new Phaser.Point(2, 1), new Phaser.Point(1, 1), new Phaser.Point(1, 2), new Phaser.Point(1, 3)];
+var I_SHAPE = [[true, true, true, true]];
+var O_SHAPE = [[true, true], [true, true]];
+var T_SHAPE = [[true], [true, true], [true]];
+var S_SHAPE = [[true], [true, true], [false, true]];
+var Z_SHAPE = [[false, true], [true, true], [true]];
+var J_SHAPE = [[true, true], [true], [true]];
+var L_SHAPE = [[true], [true], [true, true]];
 (function (BlockType) {
     function getColor(type) {
         switch (type) {
@@ -149,10 +160,20 @@ var SimpleGame = /** @class */ (function () {
     }
     SimpleGame.prototype.preload = function () {
         Block.preload(this.game);
+        Test.runDimensionTest();
     };
     SimpleGame.prototype.create = function () {
         this.nextUpdate = 0;
         this.grid = new Grid(gridWidth, gridHeight, this.game);
+        this.deadBlocks = [];
+        var left = this.game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
+        left.onDown.add(function () { this.currentBlock.move(-1, 0); }, this);
+        var right = this.game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
+        right.onDown.add(function () { this.currentBlock.move(1, 0); }, this);
+        var down = this.game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
+        down.onDown.add(function () { this.currentBlock.move(0, -1); }, this);
+        var up = this.game.input.keyboard.addKey(Phaser.Keyboard.UP);
+        up.onDown.add(function () { this.currentBlock.rotate(); }, this);
     };
     SimpleGame.prototype.update = function () {
         this.nextUpdate -= this.game.time.elapsedMS;
@@ -161,11 +182,10 @@ var SimpleGame = /** @class */ (function () {
                 this.currentBlock.update();
             }
             else {
-                var type = Math.floor(Math.random() * 7);
-                var max = Block.getDimensions(type);
-                console.log(BlockType[type]);
-                console.log(max);
-                this.currentBlock = new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width)), gridHeight + max.height), this.game);
+                if (this.currentBlock) {
+                    this.deadBlocks.push(this.currentBlock);
+                }
+                this.currentBlock = Block.newBlock(this.game);
             }
             this.nextUpdate = timestep;
         }
@@ -201,5 +221,44 @@ var Grid = /** @class */ (function () {
         return true;
     };
     return Grid;
+}());
+var Test = /** @class */ (function () {
+    function Test() {
+    }
+    Test.runDimensionTest = function () {
+        var i = Block.getDimensions(BlockType.I);
+        var o = Block.getDimensions(BlockType.O);
+        var t = Block.getDimensions(BlockType.T);
+        var s = Block.getDimensions(BlockType.S);
+        var z = Block.getDimensions(BlockType.Z);
+        var j = Block.getDimensions(BlockType.J);
+        var l = Block.getDimensions(BlockType.L);
+        // console.log("I" + i);
+        // console.log("O" + o);
+        // console.log("T" + t);
+        // console.log("S" + s);
+        // console.log("Z" + z);
+        // console.log("J" + j);
+        // console.log("L" + l);
+        Test.assert(i.x == 1, "I width");
+        Test.assert(o.x == 2, "O width");
+        Test.assert(t.x == 3, "T width");
+        Test.assert(s.x == 3, "S width");
+        Test.assert(z.x == 3, "Z width");
+        Test.assert(j.x == 3, "J width");
+        Test.assert(l.x == 3, "L width");
+        Test.assert(i.y == 4, "I height");
+        Test.assert(o.y == 2, "O height");
+        Test.assert(t.y == 2, "T height");
+        Test.assert(s.y == 2, "S height");
+        Test.assert(z.y == 2, "Z height");
+        Test.assert(j.y == 2, "J height");
+        Test.assert(l.y == 2, "L height");
+    };
+    Test.assert = function (condition, test) {
+        if (!condition)
+            console.error(test);
+    };
+    return Test;
 }());
 //# sourceMappingURL=game.js.map
