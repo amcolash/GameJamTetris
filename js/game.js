@@ -1,17 +1,48 @@
 var Block = /** @class */ (function () {
-    function Block(type, pos, game) {
+    function Block(type, gridPos, game) {
         this.type = type;
-        this.pos = pos;
+        this.gridPos = gridPos;
         this.shape = BlockType.getShape(type);
-        // TODO: Group
+        this.group = game.add.group();
+        var color = BlockType.getColor(type);
+        for (var i = 0; i < 4; i++) {
+            this.group.create(this.shape[i].x * blockSize, this.shape[i].y * blockSize, color);
+        }
+        this.group.setAll("width", blockSize);
+        this.group.setAll("height", blockSize);
+        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
     }
+    Block.prototype.isAlive = function () {
+        return this.gridPos.y > 3;
+    };
     Block.prototype.update = function () {
-        this.pos.x -= 1;
+        this.gridPos.y -= 1;
+        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
+        if (!this.isAlive()) {
+            this.group.destroy();
+        }
     };
     Block.prototype.move = function (pos) {
+        // TODO
     };
     Block.prototype.rotate = function () {
-        this.rot = (this.rot + 90) % 360;
+        this.group.rotation = (this.group.rotation + 90) % 360;
+    };
+    Block.prototype.getDimensions = function () {
+        return Block.getDimensions(this.type);
+    };
+    Block.getDimensions = function (type) {
+        var shape = BlockType.getShape(type);
+        var dim = new Phaser.Rectangle(0, 0, 0, 0);
+        // Invert y value
+        dim.y = 3;
+        for (var i = 0; i < 4; i++) {
+            dim.x = Math.min(dim.x, shape[i].x);
+            dim.y = Math.min(dim.y, shape[i].y);
+            dim.width = Math.max(dim.width, shape[i].x - dim.x + 1);
+            dim.height = Math.max(dim.height, shape[i].y - dim.y + 1);
+        }
+        return dim;
     };
     Block.preload = function (game) {
         game.load.image(BlockColor[BlockColor.BLUE], 'img/colorblocks/blue.png');
@@ -28,6 +59,17 @@ var Block = /** @class */ (function () {
     };
     return Block;
 }());
+var BlockType;
+(function (BlockType) {
+    BlockType[BlockType["I"] = 0] = "I";
+    BlockType[BlockType["O"] = 1] = "O";
+    BlockType[BlockType["T"] = 2] = "T";
+    BlockType[BlockType["S"] = 3] = "S";
+    BlockType[BlockType["Z"] = 4] = "Z";
+    BlockType[BlockType["J"] = 5] = "J";
+    BlockType[BlockType["L"] = 6] = "L";
+})(BlockType || (BlockType = {}));
+; // http://imgur.com/9Z0oJXe
 var BlockColor;
 (function (BlockColor) {
     BlockColor[BlockColor["BLUE"] = 0] = "BLUE";
@@ -43,87 +85,89 @@ var BlockColor;
     BlockColor[BlockColor["WHITE"] = 10] = "WHITE";
 })(BlockColor || (BlockColor = {}));
 ;
-var BlockType;
+var I_COLOR = BlockColor[BlockColor.RED];
+var O_COLOR = BlockColor[BlockColor.BLUE];
+var T_COLOR = BlockColor[BlockColor.GRAY];
+var S_COLOR = BlockColor[BlockColor.ORANGE];
+var Z_COLOR = BlockColor[BlockColor.GREEN];
+var J_COLOR = BlockColor[BlockColor.PINK];
+var L_COLOR = BlockColor[BlockColor.PURPLE];
+var I_SHAPE = [new Phaser.Point(1, 0), new Phaser.Point(1, 1), new Phaser.Point(1, 2), new Phaser.Point(1, 3)];
+var O_SHAPE = [new Phaser.Point(1, 2), new Phaser.Point(1, 3), new Phaser.Point(2, 2), new Phaser.Point(2, 3)];
+var T_SHAPE = [new Phaser.Point(1, 2), new Phaser.Point(0, 3), new Phaser.Point(1, 3), new Phaser.Point(2, 3)];
+var S_SHAPE = [new Phaser.Point(0, 2), new Phaser.Point(1, 2), new Phaser.Point(1, 3), new Phaser.Point(2, 3)];
+var Z_SHAPE = [new Phaser.Point(2, 2), new Phaser.Point(1, 2), new Phaser.Point(1, 3), new Phaser.Point(0, 3)];
+var J_SHAPE = [new Phaser.Point(1, 1), new Phaser.Point(2, 1), new Phaser.Point(2, 2), new Phaser.Point(2, 3)];
+var L_SHAPE = [new Phaser.Point(2, 1), new Phaser.Point(1, 1), new Phaser.Point(1, 2), new Phaser.Point(1, 3)];
 (function (BlockType) {
-    BlockType[BlockType["I"] = 0] = "I";
-    BlockType[BlockType["J"] = 1] = "J";
-    BlockType[BlockType["L"] = 2] = "L";
-    BlockType[BlockType["O"] = 3] = "O";
-    BlockType[BlockType["S"] = 4] = "S";
-    BlockType[BlockType["T"] = 5] = "T";
-    BlockType[BlockType["Z"] = 6] = "Z";
-})(BlockType || (BlockType = {}));
-; // http://imgur.com/9Z0oJXe
-/**
- * Shapes are based off of 4x4 grid shape
- *
- * 1  2  3  4
- * 5  6  7  8
- * 9  10 11 12
- * 13 14 15 16
- */
-(function (BlockType) {
-    function getShape(type) {
-        var shape = [];
-        for (var i = 0; i < 4; i++) {
-            shape[i] = [];
-        }
+    function getColor(type) {
         switch (type) {
             case BlockType.I:
-                shape[1][0] = BlockColor.RED;
-                shape[1][1] = BlockColor.RED;
-                shape[1][2] = BlockColor.RED;
-                shape[1][3] = BlockColor.RED;
+                return I_COLOR;
             case BlockType.O:
-                shape[1][1] = BlockColor.BLUE;
-                shape[1][2] = BlockColor.BLUE;
-                shape[2][1] = BlockColor.BLUE;
-                shape[2][2] = BlockColor.BLUE;
+                return O_COLOR;
             case BlockType.T:
-                shape[1][1] = BlockColor.GRAY;
-                shape[0][2] = BlockColor.GRAY;
-                shape[1][2] = BlockColor.GRAY;
-                shape[2][2] = BlockColor.GRAY;
+                return T_COLOR;
             case BlockType.S:
-                shape[0][1] = BlockColor.ORANGE;
-                shape[1][1] = BlockColor.ORANGE;
-                shape[1][2] = BlockColor.ORANGE;
-                shape[2][2] = BlockColor.ORANGE;
+                return S_COLOR;
             case BlockType.Z:
-                shape[2][1] = BlockColor.GREEN;
-                shape[1][1] = BlockColor.GREEN;
-                shape[1][2] = BlockColor.GREEN;
-                shape[0][2] = BlockColor.GREEN;
+                return Z_COLOR;
             case BlockType.J:
-                shape[1][1] = BlockColor.LIGHT_BLUE;
-                shape[2][1] = BlockColor.LIGHT_BLUE;
-                shape[2][2] = BlockColor.LIGHT_BLUE;
-                shape[2][3] = BlockColor.LIGHT_BLUE;
+                return J_COLOR;
             case BlockType.L:
-                shape[2][1] = BlockColor.PURPLE;
-                shape[1][1] = BlockColor.PURPLE;
-                shape[1][2] = BlockColor.PURPLE;
-                shape[1][3] = BlockColor.PURPLE;
+                return L_COLOR;
         }
-        return shape;
+    }
+    BlockType.getColor = getColor;
+    function getShape(type) {
+        switch (type) {
+            case BlockType.I:
+                return I_SHAPE;
+            case BlockType.O:
+                return O_SHAPE;
+            case BlockType.T:
+                return T_SHAPE;
+            case BlockType.S:
+                return S_SHAPE;
+            case BlockType.Z:
+                return Z_SHAPE;
+            case BlockType.J:
+                return J_SHAPE;
+            case BlockType.L:
+                return L_SHAPE;
+        }
     }
     BlockType.getShape = getShape;
 })(BlockType || (BlockType = {}));
+var gridWidth = 10;
+var gridHeight = 22;
+var blockSize = 32;
+var timestep = 50;
 var SimpleGame = /** @class */ (function () {
     function SimpleGame() {
-        this.width = 10;
-        this.height = 22;
         this.game = new Phaser.Game(500, 750, Phaser.AUTO, 'content', { preload: this.preload, create: this.create, update: this.update });
     }
     SimpleGame.prototype.preload = function () {
         Block.preload(this.game);
     };
     SimpleGame.prototype.create = function () {
-        this.grid = new Grid(this.width, this.height, this.game);
+        this.nextUpdate = 0;
+        this.grid = new Grid(gridWidth, gridHeight, this.game);
     };
     SimpleGame.prototype.update = function () {
-        if (!this.currentBlock) {
-            this.currentBlock = new Block(BlockType.O, new Phaser.Point(this.width / 2, this.height), this.game);
+        this.nextUpdate -= this.game.time.elapsedMS;
+        if (this.nextUpdate <= 0) {
+            if (this.currentBlock && this.currentBlock.isAlive()) {
+                this.currentBlock.update();
+            }
+            else {
+                var type = Math.floor(Math.random() * 7);
+                var max = Block.getDimensions(type);
+                console.log(BlockType[type]);
+                console.log(max);
+                this.currentBlock = new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width)), gridHeight + max.height), this.game);
+            }
+            this.nextUpdate = timestep;
         }
     };
     SimpleGame.prototype.getInstance = function () {
@@ -140,8 +184,6 @@ var Grid = /** @class */ (function () {
         this.colors = [];
         for (var x = 0; x < width; x++) {
             this.colors[x] = [];
-        }
-        for (var x = 0; x < width; x++) {
             this.colors[x][0] = BlockColor.DARKGRAY;
         }
         for (var y = 0; y < height; y++) {
@@ -150,11 +192,14 @@ var Grid = /** @class */ (function () {
         }
         this.group = game.add.group();
         this.group.createMultiple(width * height, BlockColor[BlockColor.WHITE], [0], true);
-        this.group.setAll("width", 32);
-        this.group.setAll("height", 32);
+        this.group.setAll("width", blockSize);
+        this.group.setAll("height", blockSize);
         this.group.setAll("alpha", 0.5);
-        this.group.align(width, height, 32, 32);
+        this.group.align(width, height, blockSize, blockSize);
     }
+    Grid.prototype.isValidPosition = function (points) {
+        return true;
+    };
     return Grid;
 }());
 //# sourceMappingURL=game.js.map

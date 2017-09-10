@@ -1,29 +1,67 @@
 class Block {
     type: BlockType;
-    pos: Phaser.Point;
-    rot: number;
-    shape: number[][];
+    gridPos: Phaser.Point;
+    shape: Phaser.Point[];
     group: Phaser.Group;
 
-    constructor(type: BlockType, pos: Phaser.Point, game: Phaser.Game) {
+    constructor(type: BlockType, gridPos: Phaser.Point, game: Phaser.Game) {
         this.type = type;
-        this.pos = pos;
+        this.gridPos = gridPos;
         this.shape = BlockType.getShape(type);
 
-        // TODO: Group
+        this.group = game.add.group();
+        
+        let color: string = BlockType.getColor(type);
+        for (let i:number = 0; i < 4; i++) {
+            this.group.create(this.shape[i].x * blockSize, this.shape[i].y * blockSize, color);
+        }
+        this.group.setAll("width", blockSize);
+        this.group.setAll("height", blockSize);
+
+        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
+    }
+
+    isAlive():boolean {
+        return this.gridPos.y > 3;
     }
 
     update() {
-        this.pos.x -= 1;
+        this.gridPos.y -= 1;
+        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
+        
+        if (!this.isAlive()) {
+            this.group.destroy();
+        }
     }
 
     move(pos: Phaser.Point) {
-        
+        // TODO
     }
 
     rotate() {
-        this.rot = (this.rot + 90) % 360;
+        this.group.rotation = (this.group.rotation + 90) % 360;
     }
+
+    getDimensions():Phaser.Rectangle {
+        return Block.getDimensions(this.type);
+    }
+
+	static getDimensions(type: BlockType):Phaser.Rectangle {
+		let shape:Phaser.Point[] = BlockType.getShape(type);
+		let dim:Phaser.Rectangle = new Phaser.Rectangle(0,0,0,0);
+
+        // Invert y value
+        dim.y = 3;
+		for (let i:number = 0; i < 4; i++) {
+			dim.x = Math.min(dim.x, shape[i].x);
+			dim.y = Math.min(dim.y, shape[i].y);
+
+			dim.width = Math.max(dim.width, shape[i].x - dim.x + 1);
+			dim.height = Math.max(dim.height, shape[i].y - dim.y + 1);
+        }
+        
+        return dim;
+	}
 
     static preload(game: Phaser.Game) {
         game.load.image(BlockColor[BlockColor.BLUE], 'img/colorblocks/blue.png');
