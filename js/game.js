@@ -1,8 +1,12 @@
 var Block = /** @class */ (function () {
-    function Block(type, gridPos, game) {
+    function Block(type, gridPos, game, grid) {
         this.type = type;
         this.gridPos = gridPos;
-        this.shape = BlockType.getShape(type);
+        this.grid = grid;
+        this.isAlive = true;
+        var baseShape = BlockType.getShape(type);
+        // Deep copy of the shape locally
+        this.shape = JSON.parse(JSON.stringify(baseShape));
         var color = BlockType.getColor(type);
         this.group = game.add.group();
         for (var i = 0; i < 4; i++) {
@@ -12,20 +16,55 @@ var Block = /** @class */ (function () {
         this.group.setAll("height", blockSize);
         this.updateShape();
     }
-    Block.prototype.isAlive = function () {
-        return this.gridPos.y > 4;
+    Block.newBlock = function (game, grid) {
+        // let blocked:boolean[][] = Block.getBlockedCoordinates(grid);
+        // console.log(blocked);
+        var type = Math.floor(Math.random() * 7);
+        var max = Block.getDimensions(type);
+        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width + 1)), gridHeight + max.height), game, grid);
+    };
+    Block.prototype.move = function (x, y) {
+        if (this.moveYPossible(y)) {
+            this.gridPos.y += y;
+            if (this.moveXPossible(x)) {
+                this.gridPos.x += x;
+            }
+            this.updateShape();
+        }
+        else {
+            this.isAlive = false;
+        }
+    };
+    Block.prototype.rotate = function () {
+        if (this.type == BlockType.O)
+            return; // Nothing to do here
+        this.shape = RotateMatrix.rotate(this.shape);
+        this.updateShape();
+    };
+    Block.prototype.moveXPossible = function (x) {
+        var dim = this.getDimensions();
+        if ((this.gridPos.x + x) < dim.x)
+            return false;
+        if ((this.gridPos.x + x) > gridWidth - dim.width - dim.x)
+            return false;
+        return true;
+    };
+    Block.prototype.moveYPossible = function (y) {
+        var dim = this.getDimensions();
+        if ((this.gridPos.y + y) < dim.height + dim.y)
+            return false;
+        return true;
     };
     Block.prototype.update = function () {
-        if (this.isAlive()) {
+        if (this.isAlive) {
             this.move(0, -1);
-            this.updateShape();
         }
     };
     Block.prototype.updateShape = function () {
         var i = 0;
-        for (var y = 0; y < 4; y++) {
-            for (var x = 0; x < 4; x++) {
-                if (this.shape[y][x] == 1) {
+        for (var y = 0; y < this.shape.length; y++) {
+            for (var x = 0; x < this.shape[y].length; x++) {
+                if (this.shape[y][x]) {
                     this.group.getChildAt(i).position.set(x * blockSize, y * blockSize);
                     i++;
                 }
@@ -33,34 +72,19 @@ var Block = /** @class */ (function () {
         }
         this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
     };
-    Block.prototype.move = function (x, y) {
-        this.gridPos.x += x;
-        this.gridPos.y += y;
-    };
-    Block.prototype.rotate = function () {
-        if (this.type == BlockType.O)
-            return; // Nothing to do here
-        this.updateShape();
-    };
     Block.prototype.getDimensions = function () {
         return Block.getDimensions(this.type);
     };
-    Block.newBlock = function (game) {
-        var type = Math.floor(Math.random() * 7);
-        var max = Block.getDimensions(type);
-        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.x + 1)), gridHeight + max.y), game);
-    };
     // Only valid if we have at least a 1 point in a block (which we do in normal tetris)
     Block.getDimensions = function (type) {
-        var dim = new Phaser.Point();
         var shape = BlockType.getShape(type);
-        var minX = 4;
+        var minX = shape.length;
         var maxX = 0;
-        var minY = 4;
+        var minY = shape.length;
         var maxY = 0;
-        for (var y = 0; y < 4; y++) {
-            for (var x = 0; x < 4; x++) {
-                if (shape[y][x] == 1) {
+        for (var y = 0; y < shape.length; y++) {
+            for (var x = 0; x < shape[y].length; x++) {
+                if (shape[y][x]) {
                     minX = Math.min(minX, x);
                     maxX = Math.max(maxX, x);
                     minY = Math.min(minY, y);
@@ -68,9 +92,28 @@ var Block = /** @class */ (function () {
                 }
             }
         }
-        dim.x = maxX - minX + 1;
-        dim.y = maxY - minY + 1;
+        var dim = new Phaser.Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         return dim;
+    };
+    Block.getBlockedCoordinates = function (grid) {
+        var blocked = [];
+        for (var y = 0; y < gridHeight; y++) {
+            blocked[y] = [];
+            for (var x = 0; x < gridWidth; x++) {
+                blocked[y][x] = false;
+            }
+        }
+        for (var _i = 0, _a = grid.deadBlocks; _i < _a.length; _i++) {
+            var block = _a[_i];
+            for (var y = 0; y < block.shape.length; y++) {
+                for (var x = 0; x < block.shape[y].length; x++) {
+                    if (block.shape[y][x]) {
+                        blocked[y][x] = true;
+                    }
+                }
+            }
+        }
+        return blocked;
     };
     Block.preload = function (game) {
         game.load.image(BlockColor[BlockColor.BLUE], 'img/colorblocks/blue.png');
@@ -97,7 +140,7 @@ var BlockType;
     BlockType[BlockType["J"] = 5] = "J";
     BlockType[BlockType["L"] = 6] = "L";
 })(BlockType || (BlockType = {}));
-; // http://imgur.com/9Z0oJXe
+; // http://imgur.com/9ZfalseoJXe
 var BlockColor;
 (function (BlockColor) {
     BlockColor[BlockColor["BLUE"] = 0] = "BLUE";
@@ -120,13 +163,13 @@ var S_COLOR = BlockColor[BlockColor.ORANGE];
 var Z_COLOR = BlockColor[BlockColor.GREEN];
 var J_COLOR = BlockColor[BlockColor.PINK];
 var L_COLOR = BlockColor[BlockColor.PURPLE];
-var I_SHAPE = [[1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0]];
-var O_SHAPE = [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 0, 0], [1, 1, 0, 0]];
-var T_SHAPE = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 1, 0, 0], [1, 1, 1, 0]];
-var S_SHAPE = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 1, 1, 0], [1, 1, 0, 0]];
-var Z_SHAPE = [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 0, 0], [0, 1, 1, 0]];
-var J_SHAPE = [[0, 0, 0, 0], [0, 0, 0, 0], [1, 0, 0, 0], [1, 1, 1, 0]];
-var L_SHAPE = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 1, 0], [1, 1, 1, 0]];
+var I_SHAPE = [[false, true, false, false], [false, true, false, false], [false, true, false, false], [false, true, false, false]];
+var O_SHAPE = [[true, true], [true, true]];
+var T_SHAPE = [[false, false, false,], [false, true, false], [true, true, true]];
+var S_SHAPE = [[false, false, false,], [false, true, true], [true, true, false]];
+var Z_SHAPE = [[false, false, false,], [true, true, false], [false, true, true]];
+var J_SHAPE = [[false, false, false,], [true, false, false], [true, true, true]];
+var L_SHAPE = [[false, false, false,], [false, false, true], [true, true, true]];
 (function (BlockType) {
     function getColor(type) {
         switch (type) {
@@ -184,21 +227,28 @@ var SimpleGame = /** @class */ (function () {
             return;
         this.nextUpdate = 0;
         this.grid = new Grid(gridWidth, gridHeight, this.game);
-        this.deadBlocks = [];
+        var left = this.game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
+        left.onDown.add(function () { this.currentBlock.move(-1, 0); }, this);
+        var right = this.game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
+        right.onDown.add(function () { this.currentBlock.move(1, 0); }, this);
+        var up = this.game.input.keyboard.addKey(Phaser.Keyboard.UP);
+        up.onDown.add(function () { this.currentBlock.rotate(); }, this);
+        var down = this.game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
+        down.onDown.add(function () { this.currentBlock.move(0, -1); }, this);
     };
     SimpleGame.prototype.update = function () {
         if (this.testsFailed)
             return;
         this.nextUpdate -= this.game.time.elapsedMS;
         if (this.nextUpdate <= 0) {
-            if (this.currentBlock && this.currentBlock.isAlive()) {
+            if (this.currentBlock && this.currentBlock.isAlive) {
                 this.currentBlock.update();
             }
             else {
                 if (this.currentBlock) {
-                    this.deadBlocks.push(this.currentBlock);
+                    this.grid.deadBlocks.push(this.currentBlock);
                 }
-                this.currentBlock = Block.newBlock(this.game);
+                this.currentBlock = Block.newBlock(this.game, this.grid);
             }
             this.nextUpdate = timestep;
         }
@@ -214,26 +264,59 @@ window.onload = function () {
 };
 var Grid = /** @class */ (function () {
     function Grid(width, height, game) {
-        this.colors = [];
-        for (var x = 0; x < width; x++) {
-            this.colors[x] = [];
-            this.colors[x][0] = BlockColor.DARKGRAY;
-        }
-        for (var y = 0; y < height; y++) {
-            this.colors[0][y] = BlockColor.DARKGRAY;
-            this.colors[width - 1][y] = BlockColor.DARKGRAY;
-        }
         this.group = game.add.group();
         this.group.createMultiple(width * height, BlockColor[BlockColor.WHITE], [0], true);
         this.group.setAll("width", blockSize);
         this.group.setAll("height", blockSize);
         this.group.setAll("alpha", 0.5);
         this.group.align(width, height, blockSize, blockSize);
+        this.deadBlocks = [];
     }
-    Grid.prototype.isValidPosition = function (points) {
-        return true;
-    };
     return Grid;
+}());
+/* From https://github.com/graemeboy/matrix-rotate, typescript-ified */
+var RotateMatrix = /** @class */ (function () {
+    function RotateMatrix() {
+    }
+    RotateMatrix.rotate = function (matrix) {
+        // Our rotation algorithm involves two steps, transposing
+        // and reversing.
+        this.transpose(matrix);
+        this.reverseRows(matrix);
+        return matrix;
+    };
+    /**
+     * Swap each colum with it's n-i corresponding element
+     */
+    RotateMatrix.reverseRows = function (matrix) {
+        for (var i in matrix) {
+            matrix[i] = matrix[i].reverse();
+        }
+    };
+    /**
+     * Transpose a 2D matrix
+     */
+    RotateMatrix.transpose = function (matrix) {
+        // For NxN matrix
+        var n = matrix[0].length;
+        var temp;
+        // Walk through columns
+        var i;
+        var j;
+        for (i = 0, j = 0; i < n; i++) {
+            j = i;
+            // Walk through rows
+            while (j < n) {
+                if (i !== j) {
+                    temp = matrix[i][j];
+                    matrix[i][j] = matrix[j][i];
+                    matrix[j][i] = temp;
+                }
+                j++;
+            }
+        }
+    };
+    return RotateMatrix;
 }());
 var Test = /** @class */ (function () {
     function Test() {
@@ -257,13 +340,20 @@ var Test = /** @class */ (function () {
         var zDim = Block.getDimensions(BlockType.Z);
         var jDim = Block.getDimensions(BlockType.J);
         var lDim = Block.getDimensions(BlockType.L);
-        numErrors += Test.assert(iDim.x == 1, "Width: I, " + iDim);
-        numErrors += Test.assert(oDim.x == 2, "Width: O, " + oDim);
-        numErrors += Test.assert(tDim.x == 3, "Width: T, " + tDim);
-        numErrors += Test.assert(sDim.x == 3, "Width: S, " + sDim);
-        numErrors += Test.assert(zDim.x == 3, "Width: Z, " + zDim);
-        numErrors += Test.assert(jDim.x == 3, "Width: J, " + jDim);
-        numErrors += Test.assert(lDim.x == 3, "Width: L, " + lDim);
+        numErrors += Test.assert(iDim.width == 1, "Width: I, " + iDim);
+        numErrors += Test.assert(oDim.width == 2, "Width: O, " + oDim);
+        numErrors += Test.assert(tDim.width == 3, "Width: T, " + tDim);
+        numErrors += Test.assert(sDim.width == 3, "Width: S, " + sDim);
+        numErrors += Test.assert(zDim.width == 3, "Width: Z, " + zDim);
+        numErrors += Test.assert(jDim.width == 3, "Width: J, " + jDim);
+        numErrors += Test.assert(lDim.width == 3, "Width: L, " + lDim);
+        numErrors += Test.assert(iDim.x == 1, "X Offset: I, " + iDim);
+        numErrors += Test.assert(oDim.x == 0, "X Offset: O, " + oDim);
+        numErrors += Test.assert(tDim.x == 0, "X Offset: T, " + tDim);
+        numErrors += Test.assert(sDim.x == 0, "X Offset: S, " + sDim);
+        numErrors += Test.assert(zDim.x == 0, "X Offset: Z, " + zDim);
+        numErrors += Test.assert(jDim.x == 0, "X Offset: J, " + jDim);
+        numErrors += Test.assert(lDim.x == 0, "X Offset: L, " + lDim);
         if (numErrors > 0) {
             console.error("Width Tests: " + numErrors + " errors");
         }
@@ -278,13 +368,20 @@ var Test = /** @class */ (function () {
         var zDim = Block.getDimensions(BlockType.Z);
         var jDim = Block.getDimensions(BlockType.J);
         var lDim = Block.getDimensions(BlockType.L);
-        numErrors += Test.assert(iDim.y == 4, "Height: I, " + iDim);
-        numErrors += Test.assert(oDim.y == 2, "Height: O, " + oDim);
-        numErrors += Test.assert(tDim.y == 2, "Height: T, " + tDim);
-        numErrors += Test.assert(sDim.y == 2, "Height: S, " + sDim);
-        numErrors += Test.assert(zDim.y == 2, "Height: Z, " + zDim);
-        numErrors += Test.assert(jDim.y == 2, "Height: J, " + jDim);
-        numErrors += Test.assert(lDim.y == 2, "Height: L, " + lDim);
+        numErrors += Test.assert(iDim.height == 4, "Height: I, " + iDim);
+        numErrors += Test.assert(oDim.height == 2, "Height: O, " + oDim);
+        numErrors += Test.assert(tDim.height == 2, "Height: T, " + tDim);
+        numErrors += Test.assert(sDim.height == 2, "Height: S, " + sDim);
+        numErrors += Test.assert(zDim.height == 2, "Height: Z, " + zDim);
+        numErrors += Test.assert(jDim.height == 2, "Height: J, " + jDim);
+        numErrors += Test.assert(lDim.height == 2, "Height: L, " + lDim);
+        numErrors += Test.assert(iDim.y == 0, "Y Offset: I, " + iDim);
+        numErrors += Test.assert(oDim.y == 0, "Y Offset: O, " + oDim);
+        numErrors += Test.assert(tDim.y == 1, "Y Offset: T, " + tDim);
+        numErrors += Test.assert(sDim.y == 1, "Y Offset: S, " + sDim);
+        numErrors += Test.assert(zDim.y == 1, "Y Offset: Z, " + zDim);
+        numErrors += Test.assert(jDim.y == 1, "Y Offset: J, " + jDim);
+        numErrors += Test.assert(lDim.y == 1, "Y Offset: L, " + lDim);
         if (numErrors > 0) {
             console.error("Height Tests: " + numErrors + " errors");
         }

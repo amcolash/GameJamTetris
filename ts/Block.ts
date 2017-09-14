@@ -1,14 +1,32 @@
 class Block {
+    grid:Grid;
     type: BlockType;
     gridPos: Phaser.Point;
-    shape: number[][];
+    shape: boolean[][];
     group: Phaser.Group;
+    isAlive: boolean;
 
-    constructor(type: BlockType, gridPos: Phaser.Point, game: Phaser.Game) {
+    static newBlock(game: Phaser.Game, grid: Grid): Block {
+        // let blocked:boolean[][] = Block.getBlockedCoordinates(grid);
+        // console.log(blocked);
+
+        let type: BlockType = Math.floor(Math.random() * 7);
+        let max: Phaser.Rectangle = Block.getDimensions(type);
+
+        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width + 1)), gridHeight + max.height), game, grid);
+    }
+
+    constructor(type: BlockType, gridPos: Phaser.Point, game: Phaser.Game, grid: Grid) {
         this.type = type;
         this.gridPos = gridPos;
-        this.shape = BlockType.getShape(type);
+        this.grid = grid;
+        this.isAlive = true;
         
+        let baseShape = BlockType.getShape(type);
+
+        // Deep copy of the shape locally
+        this.shape = JSON.parse(JSON.stringify(baseShape));
+
         let color: string = BlockType.getColor(type);
         this.group = game.add.group();
 
@@ -22,22 +40,53 @@ class Block {
         this.updateShape();
     }
 
-    isAlive():boolean {
-        return this.gridPos.y > 4;
-    }
+    move(x: number, y: number) {
+        if (this.moveYPossible(y)) {
+            this.gridPos.y += y;
 
-    update() {
-        if (this.isAlive()) {
-            this.move(0, -1);
+            if (this.moveXPossible(x)) {
+                this.gridPos.x += x;
+            }
+    
             this.updateShape();
+        } else {
+            this.isAlive = false;
         }
     }
 
-    updateShape() {
+    rotate() {
+        if (this.type == BlockType.O) return; // Nothing to do here
+        this.shape = RotateMatrix.rotate(this.shape);
+        this.updateShape();
+    }
+
+
+    private moveXPossible(x: number): boolean {
+        let dim: Phaser.Rectangle = this.getDimensions();
+        if ((this.gridPos.x + x) < dim.x) return false;
+        if ((this.gridPos.x + x) > gridWidth - dim.width - dim.x) return false;
+
+        return true;
+    }
+
+    private moveYPossible(y:number):boolean {
+        let dim:Phaser.Rectangle = this.getDimensions();
+        if ((this.gridPos.y + y) < dim.height + dim.y) return false;
+
+        return true;
+    }
+
+    update() {
+        if (this.isAlive) {
+            this.move(0, -1);
+        }
+    }
+
+    private updateShape() {
         let i: number = 0;
-        for (let y: number = 0; y < 4; y++) {
-            for (let x: number = 0; x < 4; x++) {
-                if (this.shape[y][x] == 1) {
+        for (let y: number = 0; y < this.shape.length; y++) {
+            for (let x: number = 0; x < this.shape[y].length; x++) {
+                if (this.shape[y][x]) {
                     this.group.getChildAt(i).position.set(x * blockSize, y * blockSize);
                     i++;
                 }
@@ -47,42 +96,22 @@ class Block {
         this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
     }
 
-    move(x:number, y:number) {
-        this.gridPos.x += x;
-        this.gridPos.y += y;
-    }
-
-    rotate() {
-        if (this.type == BlockType.O) return; // Nothing to do here
-
-        
-        this.updateShape();
-    }
-
-    getDimensions():Phaser.Point {
+    getDimensions(): Phaser.Rectangle {
         return Block.getDimensions(this.type);
     }
 
-    static newBlock(game:Phaser.Game):Block {
-        let type:BlockType = Math.floor(Math.random() * 7);
-        let max:Phaser.Point = Block.getDimensions(type);
-
-        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.x + 1)), gridHeight + max.y), game);
-    }
-
     // Only valid if we have at least a 1 point in a block (which we do in normal tetris)
-	static getDimensions(type: BlockType):Phaser.Point {
-        let dim:Phaser.Point = new Phaser.Point();
-        let shape:number[][] = BlockType.getShape(type);
+	static getDimensions(type: BlockType):Phaser.Rectangle {
+        let shape:boolean[][] = BlockType.getShape(type);
 
-        let minX:number = 4;
+        let minX:number = shape.length;
         let maxX:number = 0;
-        let minY:number = 4;
+        let minY:number = shape.length;
         let maxY:number = 0;
 
-        for (let y:number = 0; y < 4; y++) {
-            for (let x:number = 0; x < 4; x++) {
-                if (shape[y][x] == 1) {
+        for (let y:number = 0; y < shape.length; y++) {
+            for (let x:number = 0; x < shape[y].length; x++) {
+                if (shape[y][x]) {
                     minX = Math.min(minX, x);
                     maxX = Math.max(maxX, x);
                     minY = Math.min(minY, y);
@@ -91,11 +120,32 @@ class Block {
             }
         }
 
-        dim.x = maxX - minX + 1;
-        dim.y = maxY - minY + 1;
-
+        let dim: Phaser.Rectangle = new Phaser.Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         return dim;
-	}
+    }
+    
+    static getBlockedCoordinates(grid:Grid):boolean[][] {
+        let blocked:boolean[][] = [];
+
+        for (let y:number = 0; y < gridHeight; y++) {
+            blocked[y] = [];
+            for (let x:number = 0; x < gridWidth; x++) {
+                blocked[y][x] = false;
+            }
+        }
+
+        for (let block of grid.deadBlocks) {
+            for (let y: number = 0; y < block.shape.length; y++) {
+                for (let x: number = 0; x < block.shape[y].length; x++) {
+                    if (block.shape[y][x]) {
+                        blocked[y][x] = true;
+                    }
+                }
+            }
+        }
+
+        return blocked;
+    }
 
     static preload(game: Phaser.Game) {
         game.load.image(BlockColor[BlockColor.BLUE], 'img/colorblocks/blue.png');

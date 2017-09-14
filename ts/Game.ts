@@ -10,7 +10,6 @@ class SimpleGame {
 
 	grid:Grid;
 	currentBlock:Block;
-	deadBlocks:Block[];
 	
 	constructor() {
 		this.game = new Phaser.Game( 500, 750, Phaser.AUTO, 'content', { preload:this.preload, create:this.create, update:this.update } );
@@ -26,7 +25,18 @@ class SimpleGame {
 
 		this.nextUpdate = 0;
 		this.grid = new Grid(gridWidth, gridHeight, this.game);
-		this.deadBlocks = [];
+
+		let left:Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
+		left.onDown.add(function() { this.currentBlock.move(-1, 0); }, this);
+
+		let right: Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
+		right.onDown.add(function () { this.currentBlock.move(1, 0); }, this);
+
+		let up: Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.UP);
+		up.onDown.add(function () { this.currentBlock.rotate(); }, this);
+
+		let down: Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
+		down.onDown.add(function () { this.currentBlock.move(0, -1); }, this);
 	}
 
 	update() {
@@ -34,14 +44,14 @@ class SimpleGame {
 
 		this.nextUpdate -= this.game.time.elapsedMS;
 		if (this.nextUpdate <= 0) {
-			if (this.currentBlock && this.currentBlock.isAlive()) {
+			if (this.currentBlock && this.currentBlock.isAlive) {
 				this.currentBlock.update();
 			} else {
 				if (this.currentBlock) {
-					this.deadBlocks.push(this.currentBlock);
+					this.grid.deadBlocks.push(this.currentBlock);
 				}
 
-				this.currentBlock = Block.newBlock(this.game);
+				this.currentBlock = Block.newBlock(this.game, this.grid);
 			}
 
 			this.nextUpdate = timestep;

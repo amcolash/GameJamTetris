@@ -1,4 +1,4 @@
-enum BlockType {I, O, T, S, Z, J, L}; // http://imgur.com/9Z0oJXe
+enum BlockType {I, O, T, S, Z, J, L}; // http://imgur.com/9ZfalseoJXe
 enum BlockColor {BLUE, DARKGRAY, GRAY, GREEN, LIGHT_BLUE, ORANGE, PINK, PURPLE, RED, RED2, WHITE};
 
 const I_COLOR = BlockColor[BlockColor.RED];
@@ -9,13 +9,13 @@ const Z_COLOR = BlockColor[BlockColor.GREEN];
 const J_COLOR = BlockColor[BlockColor.PINK];
 const L_COLOR = BlockColor[BlockColor.PURPLE];
 
-const I_SHAPE: number[][] = [[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0]];
-const O_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[1,1,0,0],[1,1,0,0]];
-const T_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[0,1,0,0],[1,1,1,0]];
-const S_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[0,1,1,0],[1,1,0,0]];
-const Z_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[1,1,0,0],[0,1,1,0]];
-const J_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[1,0,0,0],[1,1,1,0]];
-const L_SHAPE: number[][] = [[0,0,0,0],[0,0,0,0],[0,0,1,0],[1,1,1,0]];
+const I_SHAPE: boolean[][] = [[false,true,false,false],[false,true,false,false],[false,true,false,false],[false,true,false,false]];
+const O_SHAPE: boolean[][] = [[true,true],[true,true]];
+const T_SHAPE: boolean[][] = [[false, false, false,],[false,true,false],[true,true,true]];
+const S_SHAPE: boolean[][] = [[false, false, false,],[false,true,true],[true,true,false]];
+const Z_SHAPE: boolean[][] = [[false, false, false,],[true,true,false],[false,true,true]];
+const J_SHAPE: boolean[][] = [[false, false, false,],[true,false,false],[true,true,true]];
+const L_SHAPE: boolean[][] = [[false, false, false,],[false,false,true],[true,true,true]];
 
 namespace BlockType {
 	export function getColor(type: BlockType):string {
@@ -37,7 +37,7 @@ namespace BlockType {
 		}
 	}
 
-	export function getShape(type: BlockType):number[][] {
+	export function getShape(type: BlockType):boolean[][] {
 		switch(type) {
 			case BlockType.I:
 				return I_SHAPE;
