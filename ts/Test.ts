@@ -16,13 +16,13 @@ class Test {
     private static runWidthTests():number {
         let numErrors:number = 0;
 
-        let iBlock: Block = new Block(BlockType.I);
-        let oBlock: Block = new Block(BlockType.O);
-        let tBlock: Block = new Block(BlockType.T);
-        let sBlock: Block = new Block(BlockType.S);
-        let zBlock: Block = new Block(BlockType.Z);
-        let jBlock: Block = new Block(BlockType.J);
-        let lBlock: Block = new Block(BlockType.L);
+        let iBlock: Block = new Block(BlockType.I, new Phaser.Point(gridWidth / 2, gridHeight));
+        let oBlock: Block = new Block(BlockType.O, new Phaser.Point(gridWidth / 2, gridHeight));
+        let tBlock: Block = new Block(BlockType.T, new Phaser.Point(gridWidth / 2, gridHeight));
+        let sBlock: Block = new Block(BlockType.S, new Phaser.Point(gridWidth / 2, gridHeight));
+        let zBlock: Block = new Block(BlockType.Z, new Phaser.Point(gridWidth / 2, gridHeight));
+        let jBlock: Block = new Block(BlockType.J, new Phaser.Point(gridWidth / 2, gridHeight));
+        let lBlock: Block = new Block(BlockType.L, new Phaser.Point(gridWidth / 2, gridHeight));
 
         let iDim: Phaser.Rectangle = iBlock.getDimensions();
         let oDim: Phaser.Rectangle = oBlock.getDimensions();
@@ -91,13 +91,13 @@ class Test {
     private static runHeightTests():number {
         let numErrors: number = 0;
 
-        let iBlock:Block = new Block(BlockType.I);
-        let oBlock:Block = new Block(BlockType.O);
-        let tBlock:Block = new Block(BlockType.T);
-        let sBlock:Block = new Block(BlockType.S);
-        let zBlock:Block = new Block(BlockType.Z);
-        let jBlock:Block = new Block(BlockType.J);
-        let lBlock:Block = new Block(BlockType.L);
+        let iBlock:Block = new Block(BlockType.I, new Phaser.Point(gridWidth / 2, gridHeight));
+        let oBlock:Block = new Block(BlockType.O, new Phaser.Point(gridWidth / 2, gridHeight));
+        let tBlock:Block = new Block(BlockType.T, new Phaser.Point(gridWidth / 2, gridHeight));
+        let sBlock:Block = new Block(BlockType.S, new Phaser.Point(gridWidth / 2, gridHeight));
+        let zBlock:Block = new Block(BlockType.Z, new Phaser.Point(gridWidth / 2, gridHeight));
+        let jBlock:Block = new Block(BlockType.J, new Phaser.Point(gridWidth / 2, gridHeight));
+        let lBlock:Block = new Block(BlockType.L, new Phaser.Point(gridWidth / 2, gridHeight));
 
         let iDim: Phaser.Rectangle = iBlock.getDimensions();
         let oDim: Phaser.Rectangle = oBlock.getDimensions();

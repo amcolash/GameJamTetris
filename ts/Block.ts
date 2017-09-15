@@ -13,7 +13,7 @@ class Block {
         let type: BlockType = Math.floor(Math.random() * 7);
         let max: Phaser.Rectangle = Block.getDimensions(null, type);
 
-        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width + 1)), gridHeight + max.height), game, grid);
+        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width - max.x + 1)), gridHeight + max.height + max.y), game, grid);
     }
 
     constructor(type: BlockType, gridPos?: Phaser.Point, game?: Phaser.Game, grid?: Grid) {
@@ -62,15 +62,24 @@ class Block {
     }
 
     rotate() {
+        let tmpShape:boolean[][] = RotateMatrix.rotate(JSON.parse(JSON.stringify(this.shape)));
+        let dim: Phaser.Rectangle = Block.getDimensions(tmpShape);
+
+        if (this.gridPos.x + dim.x < 0) return;
+        if (this.gridPos.x - dim.x + dim.width > gridWidth) return;
+        if (this.gridPos.y - dim.height + dim.y < 0) return;
+
         if (this.type == BlockType.O) return; // Nothing to do here
         this.shape = RotateMatrix.rotate(this.shape);
         this.updateShape();
+
+        this.isAlive = this.moveYPossible(0); // try to fix if a block is broken
     }
 
 
     private moveXPossible(x: number): boolean {
         let dim: Phaser.Rectangle = this.getDimensions();
-        if ((this.gridPos.x + x) < dim.x) return false;
+        if ((this.gridPos.x + x) < -dim.x) return false;
         if ((this.gridPos.x + x) > gridWidth - dim.width - dim.x) return false;
 
         return true;

@@ -1,7 +1,7 @@
 const gridWidth:number = 10;
 const gridHeight:number = 22;
 const blockSize:number = 32;
-const timestep:number = 50;
+const timestep:number = 75;
 const runTests:boolean = true;
 
 class SimpleGame {
@@ -30,16 +30,16 @@ class SimpleGame {
 		this.grid = new Grid(gridWidth, gridHeight, this.game);
 
 		let left:Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
-		left.onDown.add(function() { this.currentBlock.move(-1, 0); }, this);
+		left.onDown.add(function() { if (this.currentBlock) this.currentBlock.move(-1, 0); }, this);
 
 		let right: Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
-		right.onDown.add(function () { this.currentBlock.move(1, 0); }, this);
+		right.onDown.add(function () { if (this.currentBlock) this.currentBlock.move(1, 0); }, this);
 
 		let up: Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.UP);
-		up.onDown.add(function () { this.currentBlock.rotate(); }, this);
+		up.onDown.add(function () { if (this.currentBlock) this.currentBlock.rotate(); }, this);
 
 		let down: Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
-		down.onDown.add(function () { this.currentBlock.move(0, -1); }, this);
+		down.onDown.add(function () { if (this.currentBlock) this.currentBlock.move(0, -1); }, this);
 	}
 
 	update() {

@@ -28,7 +28,7 @@ var Block = /** @class */ (function () {
         // console.log(blocked);
         var type = Math.floor(Math.random() * 7);
         var max = Block.getDimensions(null, type);
-        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width + 1)), gridHeight + max.height), game, grid);
+        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width - max.x + 1)), gridHeight + max.height + max.y), game, grid);
     };
     Block.prototype.move = function (x, y) {
         if (this.moveYPossible(y)) {
@@ -43,14 +43,23 @@ var Block = /** @class */ (function () {
         }
     };
     Block.prototype.rotate = function () {
+        var tmpShape = RotateMatrix.rotate(JSON.parse(JSON.stringify(this.shape)));
+        var dim = Block.getDimensions(tmpShape);
+        if (this.gridPos.x + dim.x < 0)
+            return;
+        if (this.gridPos.x - dim.x + dim.width > gridWidth)
+            return;
+        if (this.gridPos.y - dim.height + dim.y < 0)
+            return;
         if (this.type == BlockType.O)
             return; // Nothing to do here
         this.shape = RotateMatrix.rotate(this.shape);
         this.updateShape();
+        this.isAlive = this.moveYPossible(0); // try to fix if a block is broken
     };
     Block.prototype.moveXPossible = function (x) {
         var dim = this.getDimensions();
-        if ((this.gridPos.x + x) < dim.x)
+        if ((this.gridPos.x + x) < -dim.x)
             return false;
         if ((this.gridPos.x + x) > gridWidth - dim.width - dim.x)
             return false;
@@ -224,7 +233,7 @@ var L_SHAPE = [[false, false, false,], [false, false, true], [true, true, true]]
 var gridWidth = 10;
 var gridHeight = 22;
 var blockSize = 32;
-var timestep = 50;
+var timestep = 75;
 var runTests = true;
 var SimpleGame = /** @class */ (function () {
     function SimpleGame() {
@@ -242,13 +251,17 @@ var SimpleGame = /** @class */ (function () {
         this.nextUpdate = 0;
         this.grid = new Grid(gridWidth, gridHeight, this.game);
         var left = this.game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
-        left.onDown.add(function () { this.currentBlock.move(-1, 0); }, this);
+        left.onDown.add(function () { if (this.currentBlock)
+            this.currentBlock.move(-1, 0); }, this);
         var right = this.game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
-        right.onDown.add(function () { this.currentBlock.move(1, 0); }, this);
+        right.onDown.add(function () { if (this.currentBlock)
+            this.currentBlock.move(1, 0); }, this);
         var up = this.game.input.keyboard.addKey(Phaser.Keyboard.UP);
-        up.onDown.add(function () { this.currentBlock.rotate(); }, this);
+        up.onDown.add(function () { if (this.currentBlock)
+            this.currentBlock.rotate(); }, this);
         var down = this.game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
-        down.onDown.add(function () { this.currentBlock.move(0, -1); }, this);
+        down.onDown.add(function () { if (this.currentBlock)
+            this.currentBlock.move(0, -1); }, this);
     };
     SimpleGame.prototype.update = function () {
         if (this.testsFailed)
@@ -348,13 +361,13 @@ var Test = /** @class */ (function () {
     };
     Test.runWidthTests = function () {
         var numErrors = 0;
-        var iBlock = new Block(BlockType.I);
-        var oBlock = new Block(BlockType.O);
-        var tBlock = new Block(BlockType.T);
-        var sBlock = new Block(BlockType.S);
-        var zBlock = new Block(BlockType.Z);
-        var jBlock = new Block(BlockType.J);
-        var lBlock = new Block(BlockType.L);
+        var iBlock = new Block(BlockType.I, new Phaser.Point(gridWidth / 2, gridHeight));
+        var oBlock = new Block(BlockType.O, new Phaser.Point(gridWidth / 2, gridHeight));
+        var tBlock = new Block(BlockType.T, new Phaser.Point(gridWidth / 2, gridHeight));
+        var sBlock = new Block(BlockType.S, new Phaser.Point(gridWidth / 2, gridHeight));
+        var zBlock = new Block(BlockType.Z, new Phaser.Point(gridWidth / 2, gridHeight));
+        var jBlock = new Block(BlockType.J, new Phaser.Point(gridWidth / 2, gridHeight));
+        var lBlock = new Block(BlockType.L, new Phaser.Point(gridWidth / 2, gridHeight));
         var iDim = iBlock.getDimensions();
         var oDim = oBlock.getDimensions();
         var tDim = tBlock.getDimensions();
@@ -412,13 +425,13 @@ var Test = /** @class */ (function () {
     };
     Test.runHeightTests = function () {
         var numErrors = 0;
-        var iBlock = new Block(BlockType.I);
-        var oBlock = new Block(BlockType.O);
-        var tBlock = new Block(BlockType.T);
-        var sBlock = new Block(BlockType.S);
-        var zBlock = new Block(BlockType.Z);
-        var jBlock = new Block(BlockType.J);
-        var lBlock = new Block(BlockType.L);
+        var iBlock = new Block(BlockType.I, new Phaser.Point(gridWidth / 2, gridHeight));
+        var oBlock = new Block(BlockType.O, new Phaser.Point(gridWidth / 2, gridHeight));
+        var tBlock = new Block(BlockType.T, new Phaser.Point(gridWidth / 2, gridHeight));
+        var sBlock = new Block(BlockType.S, new Phaser.Point(gridWidth / 2, gridHeight));
+        var zBlock = new Block(BlockType.Z, new Phaser.Point(gridWidth / 2, gridHeight));
+        var jBlock = new Block(BlockType.J, new Phaser.Point(gridWidth / 2, gridHeight));
+        var lBlock = new Block(BlockType.L, new Phaser.Point(gridWidth / 2, gridHeight));
         var iDim = iBlock.getDimensions();
         var oDim = oBlock.getDimensions();
         var tDim = tBlock.getDimensions();
