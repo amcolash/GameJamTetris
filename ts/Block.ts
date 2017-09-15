@@ -11,31 +11,38 @@ class Block {
         // console.log(blocked);
 
         let type: BlockType = Math.floor(Math.random() * 7);
-        let max: Phaser.Rectangle = Block.getDimensions(type);
+        let max: Phaser.Rectangle = Block.getDimensions(null, type);
 
         return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width + 1)), gridHeight + max.height), game, grid);
     }
 
-    constructor(type: BlockType, gridPos: Phaser.Point, game: Phaser.Game, grid: Grid) {
+    constructor(type: BlockType, gridPos?: Phaser.Point, game?: Phaser.Game, grid?: Grid) {
         this.type = type;
-        this.gridPos = gridPos;
         this.grid = grid;
         this.isAlive = true;
+
+        if (gridPos) {
+            this.gridPos = gridPos;
+        } else {
+            this.gridPos = new Phaser.Point();
+        }
         
         let baseShape = BlockType.getShape(type);
 
         // Deep copy of the shape locally
         this.shape = JSON.parse(JSON.stringify(baseShape));
-
-        let color: string = BlockType.getColor(type);
-        this.group = game.add.group();
-
-        for(let i:number = 0; i < 4; i++) {
-            this.group.create(0, 0, color);
-        }
         
-        this.group.setAll("width", blockSize);
-        this.group.setAll("height", blockSize);
+        if (game) {
+            let color: string = BlockType.getColor(type);
+            this.group = game.add.group();
+
+            for(let i:number = 0; i < 4; i++) {
+                this.group.create(0, 0, color);
+            }
+            
+            this.group.setAll("width", blockSize);
+            this.group.setAll("height", blockSize);
+        }
         
         this.updateShape();
     }
@@ -83,26 +90,29 @@ class Block {
     }
 
     private updateShape() {
-        let i: number = 0;
-        for (let y: number = 0; y < this.shape.length; y++) {
-            for (let x: number = 0; x < this.shape[y].length; x++) {
-                if (this.shape[y][x]) {
-                    this.group.getChildAt(i).position.set(x * blockSize, y * blockSize);
-                    i++;
+        if (this.group) {
+            let i: number = 0;
+            for (let y: number = 0; y < this.shape.length; y++) {
+                for (let x: number = 0; x < this.shape[y].length; x++) {
+                    if (this.shape[y][x]) {
+                        this.group.getChildAt(i).position.set(x * blockSize, y * blockSize);
+                        i++;
+                    }
                 }
             }
+            this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
         }
-
-        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
     }
 
     getDimensions(): Phaser.Rectangle {
-        return Block.getDimensions(this.type);
+        return Block.getDimensions(this.shape);
     }
 
     // Only valid if we have at least a 1 point in a block (which we do in normal tetris)
-	static getDimensions(type: BlockType):Phaser.Rectangle {
-        let shape:boolean[][] = BlockType.getShape(type);
+	static getDimensions(shape?:boolean[][], type?:BlockType):Phaser.Rectangle {
+        if (!shape) {
+            shape = BlockType.getShape(type);
+        }
 
         let minX:number = shape.length;
         let maxX:number = 0;

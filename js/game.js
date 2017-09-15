@@ -1,26 +1,33 @@
 var Block = /** @class */ (function () {
     function Block(type, gridPos, game, grid) {
         this.type = type;
-        this.gridPos = gridPos;
         this.grid = grid;
         this.isAlive = true;
+        if (gridPos) {
+            this.gridPos = gridPos;
+        }
+        else {
+            this.gridPos = new Phaser.Point();
+        }
         var baseShape = BlockType.getShape(type);
         // Deep copy of the shape locally
         this.shape = JSON.parse(JSON.stringify(baseShape));
-        var color = BlockType.getColor(type);
-        this.group = game.add.group();
-        for (var i = 0; i < 4; i++) {
-            this.group.create(0, 0, color);
+        if (game) {
+            var color = BlockType.getColor(type);
+            this.group = game.add.group();
+            for (var i = 0; i < 4; i++) {
+                this.group.create(0, 0, color);
+            }
+            this.group.setAll("width", blockSize);
+            this.group.setAll("height", blockSize);
         }
-        this.group.setAll("width", blockSize);
-        this.group.setAll("height", blockSize);
         this.updateShape();
     }
     Block.newBlock = function (game, grid) {
         // let blocked:boolean[][] = Block.getBlockedCoordinates(grid);
         // console.log(blocked);
         var type = Math.floor(Math.random() * 7);
-        var max = Block.getDimensions(type);
+        var max = Block.getDimensions(null, type);
         return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width + 1)), gridHeight + max.height), game, grid);
     };
     Block.prototype.move = function (x, y) {
@@ -61,23 +68,27 @@ var Block = /** @class */ (function () {
         }
     };
     Block.prototype.updateShape = function () {
-        var i = 0;
-        for (var y = 0; y < this.shape.length; y++) {
-            for (var x = 0; x < this.shape[y].length; x++) {
-                if (this.shape[y][x]) {
-                    this.group.getChildAt(i).position.set(x * blockSize, y * blockSize);
-                    i++;
+        if (this.group) {
+            var i = 0;
+            for (var y = 0; y < this.shape.length; y++) {
+                for (var x = 0; x < this.shape[y].length; x++) {
+                    if (this.shape[y][x]) {
+                        this.group.getChildAt(i).position.set(x * blockSize, y * blockSize);
+                        i++;
+                    }
                 }
             }
+            this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
         }
-        this.group.position.set(this.gridPos.x * blockSize, (gridHeight - this.gridPos.y) * blockSize);
     };
     Block.prototype.getDimensions = function () {
-        return Block.getDimensions(this.type);
+        return Block.getDimensions(this.shape);
     };
     // Only valid if we have at least a 1 point in a block (which we do in normal tetris)
-    Block.getDimensions = function (type) {
-        var shape = BlockType.getShape(type);
+    Block.getDimensions = function (shape, type) {
+        if (!shape) {
+            shape = BlockType.getShape(type);
+        }
         var minX = shape.length;
         var maxX = 0;
         var minY = shape.length;
@@ -214,6 +225,7 @@ var gridWidth = 10;
 var gridHeight = 22;
 var blockSize = 32;
 var timestep = 50;
+var runTests = true;
 var SimpleGame = /** @class */ (function () {
     function SimpleGame() {
         this.game = new Phaser.Game(500, 750, Phaser.AUTO, 'content', { preload: this.preload, create: this.create, update: this.update });
@@ -222,9 +234,11 @@ var SimpleGame = /** @class */ (function () {
         Block.preload(this.game);
     };
     SimpleGame.prototype.create = function () {
-        this.testsFailed = !Test.runTests();
-        if (this.testsFailed)
-            return;
+        if (runTests) {
+            this.testsFailed = !Test.runTests();
+            if (this.testsFailed)
+                return;
+        }
         this.nextUpdate = 0;
         this.grid = new Grid(gridWidth, gridHeight, this.game);
         var left = this.game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
@@ -329,17 +343,25 @@ var Test = /** @class */ (function () {
             console.error("Errors Occured, Killing Game");
             return false;
         }
+        console.log("All tests passed!");
         return true;
     };
     Test.runWidthTests = function () {
         var numErrors = 0;
-        var iDim = Block.getDimensions(BlockType.I);
-        var oDim = Block.getDimensions(BlockType.O);
-        var tDim = Block.getDimensions(BlockType.T);
-        var sDim = Block.getDimensions(BlockType.S);
-        var zDim = Block.getDimensions(BlockType.Z);
-        var jDim = Block.getDimensions(BlockType.J);
-        var lDim = Block.getDimensions(BlockType.L);
+        var iBlock = new Block(BlockType.I);
+        var oBlock = new Block(BlockType.O);
+        var tBlock = new Block(BlockType.T);
+        var sBlock = new Block(BlockType.S);
+        var zBlock = new Block(BlockType.Z);
+        var jBlock = new Block(BlockType.J);
+        var lBlock = new Block(BlockType.L);
+        var iDim = iBlock.getDimensions();
+        var oDim = oBlock.getDimensions();
+        var tDim = tBlock.getDimensions();
+        var sDim = sBlock.getDimensions();
+        var zDim = zBlock.getDimensions();
+        var jDim = jBlock.getDimensions();
+        var lDim = lBlock.getDimensions();
         numErrors += Test.assert(iDim.width == 1, "Width: I, " + iDim);
         numErrors += Test.assert(oDim.width == 2, "Width: O, " + oDim);
         numErrors += Test.assert(tDim.width == 3, "Width: T, " + tDim);
@@ -354,6 +376,35 @@ var Test = /** @class */ (function () {
         numErrors += Test.assert(zDim.x == 0, "X Offset: Z, " + zDim);
         numErrors += Test.assert(jDim.x == 0, "X Offset: J, " + jDim);
         numErrors += Test.assert(lDim.x == 0, "X Offset: L, " + lDim);
+        // Test rotation of 90 degrees
+        iBlock.rotate();
+        oBlock.rotate();
+        tBlock.rotate();
+        sBlock.rotate();
+        zBlock.rotate();
+        jBlock.rotate();
+        lBlock.rotate();
+        iDim = iBlock.getDimensions();
+        oDim = oBlock.getDimensions();
+        tDim = tBlock.getDimensions();
+        sDim = sBlock.getDimensions();
+        zDim = zBlock.getDimensions();
+        jDim = jBlock.getDimensions();
+        lDim = lBlock.getDimensions();
+        numErrors += Test.assert(iDim.width == 4, "Width: I (rotated), " + iDim);
+        numErrors += Test.assert(oDim.width == 2, "Width: O (rotated), " + oDim);
+        numErrors += Test.assert(tDim.width == 2, "Width: T (rotated), " + tDim);
+        numErrors += Test.assert(sDim.width == 2, "Width: S (rotated), " + sDim);
+        numErrors += Test.assert(zDim.width == 2, "Width: Z (rotated), " + zDim);
+        numErrors += Test.assert(jDim.width == 2, "Width: J (rotated), " + jDim);
+        numErrors += Test.assert(lDim.width == 2, "Width: L (rotated), " + lDim);
+        numErrors += Test.assert(iDim.x == 0, "X Offset: I (rotated), " + iDim);
+        numErrors += Test.assert(oDim.x == 0, "X Offset: O (rotated), " + oDim);
+        numErrors += Test.assert(tDim.x == 0, "X Offset: T (rotated), " + tDim);
+        numErrors += Test.assert(sDim.x == 0, "X Offset: S (rotated), " + sDim);
+        numErrors += Test.assert(zDim.x == 0, "X Offset: Z (rotated), " + zDim);
+        numErrors += Test.assert(jDim.x == 0, "X Offset: J (rotated), " + jDim);
+        numErrors += Test.assert(lDim.x == 0, "X Offset: L (rotated), " + lDim);
         if (numErrors > 0) {
             console.error("Width Tests: " + numErrors + " errors");
         }
@@ -361,13 +412,20 @@ var Test = /** @class */ (function () {
     };
     Test.runHeightTests = function () {
         var numErrors = 0;
-        var iDim = Block.getDimensions(BlockType.I);
-        var oDim = Block.getDimensions(BlockType.O);
-        var tDim = Block.getDimensions(BlockType.T);
-        var sDim = Block.getDimensions(BlockType.S);
-        var zDim = Block.getDimensions(BlockType.Z);
-        var jDim = Block.getDimensions(BlockType.J);
-        var lDim = Block.getDimensions(BlockType.L);
+        var iBlock = new Block(BlockType.I);
+        var oBlock = new Block(BlockType.O);
+        var tBlock = new Block(BlockType.T);
+        var sBlock = new Block(BlockType.S);
+        var zBlock = new Block(BlockType.Z);
+        var jBlock = new Block(BlockType.J);
+        var lBlock = new Block(BlockType.L);
+        var iDim = iBlock.getDimensions();
+        var oDim = oBlock.getDimensions();
+        var tDim = tBlock.getDimensions();
+        var sDim = sBlock.getDimensions();
+        var zDim = zBlock.getDimensions();
+        var jDim = jBlock.getDimensions();
+        var lDim = lBlock.getDimensions();
         numErrors += Test.assert(iDim.height == 4, "Height: I, " + iDim);
         numErrors += Test.assert(oDim.height == 2, "Height: O, " + oDim);
         numErrors += Test.assert(tDim.height == 2, "Height: T, " + tDim);
@@ -382,6 +440,35 @@ var Test = /** @class */ (function () {
         numErrors += Test.assert(zDim.y == 1, "Y Offset: Z, " + zDim);
         numErrors += Test.assert(jDim.y == 1, "Y Offset: J, " + jDim);
         numErrors += Test.assert(lDim.y == 1, "Y Offset: L, " + lDim);
+        // Test rotation of 90 degrees
+        iBlock.rotate();
+        oBlock.rotate();
+        tBlock.rotate();
+        sBlock.rotate();
+        zBlock.rotate();
+        jBlock.rotate();
+        lBlock.rotate();
+        iDim = iBlock.getDimensions();
+        oDim = oBlock.getDimensions();
+        tDim = tBlock.getDimensions();
+        sDim = sBlock.getDimensions();
+        zDim = zBlock.getDimensions();
+        jDim = jBlock.getDimensions();
+        lDim = lBlock.getDimensions();
+        numErrors += Test.assert(iDim.height == 1, "Height: I (rotated), " + iDim);
+        numErrors += Test.assert(oDim.height == 2, "Height: O (rotated), " + oDim);
+        numErrors += Test.assert(tDim.height == 3, "Height: T (rotated), " + tDim);
+        numErrors += Test.assert(sDim.height == 3, "Height: S (rotated), " + sDim);
+        numErrors += Test.assert(zDim.height == 3, "Height: Z (rotated), " + zDim);
+        numErrors += Test.assert(jDim.height == 3, "Height: J (rotated), " + jDim);
+        numErrors += Test.assert(lDim.height == 3, "Height: L (rotated), " + lDim);
+        numErrors += Test.assert(iDim.y == 1, "Y Offset: I (rotated), " + iDim);
+        numErrors += Test.assert(oDim.y == 0, "Y Offset: O (rotated), " + oDim);
+        numErrors += Test.assert(tDim.y == 0, "Y Offset: T (rotated), " + tDim);
+        numErrors += Test.assert(sDim.y == 0, "Y Offset: S (rotated), " + sDim);
+        numErrors += Test.assert(zDim.y == 0, "Y Offset: Z (rotated), " + zDim);
+        numErrors += Test.assert(jDim.y == 0, "Y Offset: J (rotated), " + jDim);
+        numErrors += Test.assert(lDim.y == 0, "Y Offset: L (rotated), " + lDim);
         if (numErrors > 0) {
             console.error("Height Tests: " + numErrors + " errors");
         }

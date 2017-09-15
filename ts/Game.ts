@@ -2,6 +2,7 @@ const gridWidth:number = 10;
 const gridHeight:number = 22;
 const blockSize:number = 32;
 const timestep:number = 50;
+const runTests:boolean = true;
 
 class SimpleGame {
 	game:Phaser.Game;
@@ -20,8 +21,10 @@ class SimpleGame {
 	}
 	
 	create() {
-		this.testsFailed = !Test.runTests();
-		if (this.testsFailed) return;
+		if (runTests) {
+			this.testsFailed = !Test.runTests();
+			if (this.testsFailed) return;
+		}
 
 		this.nextUpdate = 0;
 		this.grid = new Grid(gridWidth, gridHeight, this.game);
