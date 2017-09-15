@@ -1,22 +1,19 @@
 class Block {
     grid:Grid;
-    type: BlockType;
-    gridPos: Phaser.Point;
-    shape: boolean[][];
-    group: Phaser.Group;
-    isAlive: boolean;
+    type:BlockType;
+    gridPos:Phaser.Point;
+    shape:boolean[][];
+    group:Phaser.Group;
+    isAlive:boolean;
 
-    static newBlock(game: Phaser.Game, grid: Grid): Block {
-        // let blocked:boolean[][] = Block.getBlockedCoordinates(grid);
-        // console.log(blocked);
-
-        let type: BlockType = Math.floor(Math.random() * 7);
-        let max: Phaser.Rectangle = Block.getDimensions(null, type);
+    static newBlock(game:Phaser.Game, grid:Grid):Block {
+        let type:BlockType = Math.floor(Math.random() * 7);
+        let max:Phaser.Rectangle = Block.getDimensions(null, type);
 
         return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width - max.x + 1)), gridHeight + max.height + max.y), game, grid);
     }
 
-    constructor(type: BlockType, gridPos?: Phaser.Point, game?: Phaser.Game, grid?: Grid) {
+    constructor(type:BlockType, gridPos?:Phaser.Point, game?:Phaser.Game, grid?:Grid) {
         this.type = type;
         this.grid = grid;
         this.isAlive = true;
@@ -33,7 +30,7 @@ class Block {
         this.shape = JSON.parse(JSON.stringify(baseShape));
         
         if (game) {
-            let color: string = BlockType.getColor(type);
+            let color:string = BlockType.getColor(type);
             this.group = game.add.group();
 
             for(let i:number = 0; i < 4; i++) {
@@ -47,7 +44,7 @@ class Block {
         this.updateShape();
     }
 
-    move(x: number, y: number) {
+    move(x:number, y:number) {
         if (this.moveYPossible(y)) {
             this.gridPos.y += y;
 
@@ -63,7 +60,7 @@ class Block {
 
     rotate() {
         let tmpShape:boolean[][] = RotateMatrix.rotate(JSON.parse(JSON.stringify(this.shape)));
-        let dim: Phaser.Rectangle = Block.getDimensions(tmpShape);
+        let dim:Phaser.Rectangle = Block.getDimensions(tmpShape);
 
         if (this.gridPos.x + dim.x < 0) return;
         if (this.gridPos.x - dim.x + dim.width > gridWidth) return;
@@ -77,8 +74,8 @@ class Block {
     }
 
 
-    private moveXPossible(x: number): boolean {
-        let dim: Phaser.Rectangle = this.getDimensions();
+    private moveXPossible(x:number):boolean {
+        let dim:Phaser.Rectangle = this.getDimensions();
         if ((this.gridPos.x + x) < -dim.x) return false;
         if ((this.gridPos.x + x) > gridWidth - dim.width - dim.x) return false;
 
@@ -96,13 +93,17 @@ class Block {
         if (this.isAlive) {
             this.move(0, -1);
         }
+
+        if (this.isBlocked()) {
+            this.isAlive = false;
+        }
     }
 
     private updateShape() {
         if (this.group) {
-            let i: number = 0;
-            for (let y: number = 0; y < this.shape.length; y++) {
-                for (let x: number = 0; x < this.shape[y].length; x++) {
+            let i:number = 0;
+            for (let y:number = 0; y < this.shape.length; y++) {
+                for (let x:number = 0; x < this.shape[y].length; x++) {
                     if (this.shape[y][x]) {
                         this.group.getChildAt(i).position.set(x * blockSize, y * blockSize);
                         i++;
@@ -113,7 +114,7 @@ class Block {
         }
     }
 
-    getDimensions(): Phaser.Rectangle {
+    getDimensions():Phaser.Rectangle {
         return Block.getDimensions(this.shape);
     }
 
@@ -139,34 +140,25 @@ class Block {
             }
         }
 
-        let dim: Phaser.Rectangle = new Phaser.Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        let dim:Phaser.Rectangle = new Phaser.Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         return dim;
     }
     
-    static getBlockedCoordinates(grid:Grid):boolean[][] {
-        let blocked:boolean[][] = [];
-
-        for (let y:number = 0; y < gridHeight; y++) {
-            blocked[y] = [];
-            for (let x:number = 0; x < gridWidth; x++) {
-                blocked[y][x] = false;
-            }
-        }
-
-        for (let block of grid.deadBlocks) {
-            for (let y: number = 0; y < block.shape.length; y++) {
-                for (let x: number = 0; x < block.shape[y].length; x++) {
+    isBlocked():boolean {
+        for (let block of this.grid.deadBlocks) {
+            for (let y:number = 0; y < block.shape.length; y++) {
+                for (let x:number = 0; x < block.shape[y].length; x++) {
                     if (block.shape[y][x]) {
-                        blocked[y][x] = true;
+                        // TODO: Blocked Logic
                     }
                 }
             }
         }
 
-        return blocked;
+        return false;
     }
 
-    static preload(game: Phaser.Game) {
+    static preload(game:Phaser.Game) {
         game.load.image(BlockColor[BlockColor.BLUE], 'img/colorblocks/blue.png');
         game.load.image(BlockColor[BlockColor.DARKGRAY], 'img/colorblocks/darkgray.png');
         game.load.image(BlockColor[BlockColor.GRAY], 'img/colorblocks/gray.png');

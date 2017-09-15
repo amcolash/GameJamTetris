@@ -32,13 +32,13 @@ class SimpleGame {
 		let left:Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
 		left.onDown.add(function() { if (this.currentBlock) this.currentBlock.move(-1, 0); }, this);
 
-		let right: Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
+		let right:Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
 		right.onDown.add(function () { if (this.currentBlock) this.currentBlock.move(1, 0); }, this);
 
-		let up: Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.UP);
+		let up:Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.UP);
 		up.onDown.add(function () { if (this.currentBlock) this.currentBlock.rotate(); }, this);
 
-		let down: Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
+		let down:Phaser.Key = this.game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
 		down.onDown.add(function () { if (this.currentBlock) this.currentBlock.move(0, -1); }, this);
 	}
 

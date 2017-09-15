@@ -1,8 +1,8 @@
 class Grid {
-    group: Phaser.Group;
-    deadBlocks: Block[];
+    group:Phaser.Group;
+    deadBlocks:Block[];
 
-    constructor(width: number, height: number, game: Phaser.Game) {
+    constructor(width:number, height:number, game:Phaser.Game) {
         this.group = game.add.group();
 
         this.group.createMultiple(width * height, BlockColor[BlockColor.WHITE], [0], true);

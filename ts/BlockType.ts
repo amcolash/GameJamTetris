@@ -9,16 +9,16 @@ const Z_COLOR = BlockColor[BlockColor.GREEN];
 const J_COLOR = BlockColor[BlockColor.PINK];
 const L_COLOR = BlockColor[BlockColor.PURPLE];
 
-const I_SHAPE: boolean[][] = [[false,true,false,false],[false,true,false,false],[false,true,false,false],[false,true,false,false]];
-const O_SHAPE: boolean[][] = [[true,true],[true,true]];
-const T_SHAPE: boolean[][] = [[false, false, false,],[false,true,false],[true,true,true]];
-const S_SHAPE: boolean[][] = [[false, false, false,],[false,true,true],[true,true,false]];
-const Z_SHAPE: boolean[][] = [[false, false, false,],[true,true,false],[false,true,true]];
-const J_SHAPE: boolean[][] = [[false, false, false,],[true,false,false],[true,true,true]];
-const L_SHAPE: boolean[][] = [[false, false, false,],[false,false,true],[true,true,true]];
+const I_SHAPE:boolean[][] = [[false,true,false,false],[false,true,false,false],[false,true,false,false],[false,true,false,false]];
+const O_SHAPE:boolean[][] = [[true,true],[true,true]];
+const T_SHAPE:boolean[][] = [[false, false, false,],[false,true,false],[true,true,true]];
+const S_SHAPE:boolean[][] = [[false, false, false,],[false,true,true],[true,true,false]];
+const Z_SHAPE:boolean[][] = [[false, false, false,],[true,true,false],[false,true,true]];
+const J_SHAPE:boolean[][] = [[false, false, false,],[true,false,false],[true,true,true]];
+const L_SHAPE:boolean[][] = [[false, false, false,],[false,false,true],[true,true,true]];
 
 namespace BlockType {
-	export function getColor(type: BlockType):string {
+	export function getColor(type:BlockType):string {
 		switch(type) {
 			case BlockType.I:
 				return I_COLOR;
@@ -37,7 +37,7 @@ namespace BlockType {
 		}
 	}
 
-	export function getShape(type: BlockType):boolean[][] {
+	export function getShape(type:BlockType):boolean[][] {
 		switch(type) {
 			case BlockType.I:
 				return I_SHAPE;

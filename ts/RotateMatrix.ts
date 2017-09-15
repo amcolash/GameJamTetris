@@ -28,7 +28,7 @@ class RotateMatrix {
 
 		// Walk through columns
 		let i:number;
-		let j: number;
+		let j:number;
 		for (i = 0, j = 0; i < n; i++) {
 			j = i;
 			// Walk through rows
