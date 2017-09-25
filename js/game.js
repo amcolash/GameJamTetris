@@ -25,8 +25,10 @@ var Block = /** @class */ (function () {
     }
     Block.newBlock = function (game, grid) {
         var type = Math.floor(Math.random() * 7);
+        type = BlockType.S;
         var max = Block.getDimensions(null, type);
-        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width - max.x + 1)), gridHeight + max.height + max.y), game, grid);
+        var pos = new Phaser.Point(Math.floor(gridWidth / 2) - max.x, gridHeight + max.height + max.y);
+        return new Block(type, pos, game, grid);
     };
     Block.prototype.move = function (x, y) {
         if (this.moveYPossible(y)) {
@@ -92,12 +94,16 @@ var Block = /** @class */ (function () {
         }
     };
     Block.prototype.getDimensions = function () {
-        return Block.getDimensions(this.shape);
+        return Block.getDimensions(this.shape, this.type);
     };
     // Only valid if we have at least a 1 point in a block (which we do in normal tetris)
     Block.getDimensions = function (shape, type) {
         if (!shape) {
             shape = BlockType.getShape(type);
+        }
+        var s = [[false, false, false,], [false, true, true], [true, true, false]];
+        if (JSON.stringify(shape) !== JSON.stringify(s)) {
+            console.error("WRONG SHAPE! " + BlockType[type] + JSON.stringify(shape));
         }
         var minX = shape.length;
         var maxX = 0;
@@ -116,17 +122,19 @@ var Block = /** @class */ (function () {
         var dim = new Phaser.Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         return dim;
     };
-    Block.prototype.isBlocked = function () {
-        for (var _i = 0, _a = this.grid.deadBlocks; _i < _a.length; _i++) {
-            var block = _a[_i];
-            for (var y = 0; y < block.shape.length; y++) {
-                for (var x = 0; x < block.shape[y].length; x++) {
-                    if (block.shape[y][x]) {
-                        // TODO: Blocked Logic
-                    }
+    Block.prototype.getBlockedPoints = function () {
+        var blocked = [];
+        var dim = this.getDimensions();
+        for (var y = 0; y < this.shape.length; y++) {
+            for (var x = 0; x < this.shape[y].length; x++) {
+                if (this.shape[y][x]) {
+                    blocked.push(new Phaser.Point(this.gridPos.x - x - dim.x, this.gridPos.y - y - dim.y));
                 }
             }
         }
+        return blocked;
+    };
+    Block.prototype.isBlocked = function () {
         return false;
     };
     Block.preload = function (game) {
@@ -227,8 +235,8 @@ var L_SHAPE = [[false, false, false,], [false, false, true], [true, true, true]]
 var gridWidth = 10;
 var gridHeight = 22;
 var blockSize = 32;
-var timestep = 75;
-var runTests = true;
+var timestep = 1;
+var runTests = false;
 var SimpleGame = /** @class */ (function () {
     function SimpleGame() {
         this.game = new Phaser.Game(500, 750, Phaser.AUTO, 'content', { preload: this.preload, create: this.create, update: this.update });
@@ -267,7 +275,7 @@ var SimpleGame = /** @class */ (function () {
             }
             else {
                 if (this.currentBlock) {
-                    this.grid.deadBlocks.push(this.currentBlock);
+                    // this.grid.addDeadBlock(this.currentBlock);
                 }
                 this.currentBlock = Block.newBlock(this.game, this.grid);
             }
@@ -293,6 +301,20 @@ var Grid = /** @class */ (function () {
         this.group.align(width, height, blockSize, blockSize);
         this.deadBlocks = [];
     }
+    Grid.prototype.addDeadBlock = function (block) {
+        this.deadBlocks.push(block);
+        this.deadPoints = [];
+        for (var _i = 0, _a = this.deadBlocks; _i < _a.length; _i++) {
+            var b = _a[_i];
+            var temp = b.getBlockedPoints();
+            for (var _b = 0, temp_1 = temp; _b < temp_1.length; _b++) {
+                var p = temp_1[_b];
+                this.deadPoints.push(p);
+            }
+        }
+        console.log(this.deadBlocks);
+        console.log(this.deadPoints);
+    };
     return Grid;
 }());
 /* From https://github.com/graemeboy/matrix-rotate, typescript-ified */

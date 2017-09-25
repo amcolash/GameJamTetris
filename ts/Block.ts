@@ -1,16 +1,18 @@
 class Block {
-    grid:Grid;
+    private grid:Grid;
+    private group:Phaser.Group;
     type:BlockType;
     gridPos:Phaser.Point;
     shape:boolean[][];
-    group:Phaser.Group;
     isAlive:boolean;
 
     static newBlock(game:Phaser.Game, grid:Grid):Block {
         let type:BlockType = Math.floor(Math.random() * 7);
+        type = BlockType.S;
         let max:Phaser.Rectangle = Block.getDimensions(null, type);
+        let pos: Phaser.Point = new Phaser.Point(Math.floor(gridWidth / 2) - max.x, gridHeight + max.height + max.y);
 
-        return new Block(type, new Phaser.Point(Math.floor(Math.random() * (gridWidth - max.width - max.x + 1)), gridHeight + max.height + max.y), game, grid);
+        return new Block(type, pos, game, grid);
     }
 
     constructor(type:BlockType, gridPos?:Phaser.Point, game?:Phaser.Game, grid?:Grid) {
@@ -115,13 +117,18 @@ class Block {
     }
 
     getDimensions():Phaser.Rectangle {
-        return Block.getDimensions(this.shape);
+        return Block.getDimensions(this.shape, this.type);
     }
 
     // Only valid if we have at least a 1 point in a block (which we do in normal tetris)
 	static getDimensions(shape?:boolean[][], type?:BlockType):Phaser.Rectangle {
         if (!shape) {
             shape = BlockType.getShape(type);
+        }
+
+        let s: boolean[][] = [[false, false, false,], [false, true, true], [true, true, false]];
+        if (JSON.stringify(shape) !== JSON.stringify(s)) {
+            console.error("WRONG SHAPE! " + BlockType[type] + JSON.stringify(shape));
         }
 
         let minX:number = shape.length;
@@ -144,16 +151,23 @@ class Block {
         return dim;
     }
     
-    isBlocked():boolean {
-        for (let block of this.grid.deadBlocks) {
-            for (let y:number = 0; y < block.shape.length; y++) {
-                for (let x:number = 0; x < block.shape[y].length; x++) {
-                    if (block.shape[y][x]) {
-                        // TODO: Blocked Logic
-                    }
+    getBlockedPoints():Phaser.Point[] {
+        let blocked:Phaser.Point[] = [];
+        let dim:Phaser.Rectangle = this.getDimensions();
+    
+        for (let y: number = 0; y < this.shape.length; y++) {
+            for (let x: number = 0; x < this.shape[y].length; x++) {
+                if (this.shape[y][x]) {
+                    blocked.push(new Phaser.Point(this.gridPos.x - x - dim.x, this.gridPos.y - y - dim.y));
                 }
             }
         }
+
+        return blocked;
+    }
+
+    isBlocked():boolean {
+        
 
         return false;
     }

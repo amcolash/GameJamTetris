@@ -1,8 +1,8 @@
 const gridWidth:number = 10;
 const gridHeight:number = 22;
 const blockSize:number = 32;
-const timestep:number = 75;
-const runTests:boolean = true;
+const timestep:number = 1;
+const runTests:boolean = false;
 
 class SimpleGame {
 	game:Phaser.Game;
@@ -51,7 +51,7 @@ class SimpleGame {
 				this.currentBlock.update();
 			} else {
 				if (this.currentBlock) {
-					this.grid.deadBlocks.push(this.currentBlock);
+					// this.grid.addDeadBlock(this.currentBlock);
 				}
 
 				this.currentBlock = Block.newBlock(this.game, this.grid);
@@ -67,6 +67,6 @@ class SimpleGame {
 }
 
 // when the page has finished loading, create our game
-window.onload = () => {
+window.onload = function() {
 	var game = new SimpleGame();
 }
